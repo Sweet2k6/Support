@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản trị · LST Forecast</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232563eb'/%3E%3Crect x='6' y='8' width='3' height='16' rx='1' fill='%2300ffff'/%3E%3Crect x='11' y='8' width='3' height='16' rx='1' fill='%2300ff00'/%3E%3Crect x='16' y='8' width='3' height='16' rx='1' fill='%23ffcc00'/%3E%3Crect x='21' y='8' width='3' height='16' rx='1' fill='%23ff3300'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@500;600;700&display=swap&subset=vietnamese" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css?v=4" />
+  <style>
+    body { overflow: auto; display: block; }
+    .wrap { max-width: 1180px; margin: 0 auto; padding: 22px 18px 40px; }
+    .ad-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
+    .ad-head h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.3px; }
+    .ad-head p { margin: 2px 0 0; color: var(--muted); }
+    .ad-head .sp { flex: 1; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .grid .full { grid-column: 1 / -1; }
+    .box { padding: 16px; }
+    .box h2 { margin: 0 0 4px; font-size: 15px; display: flex; gap: 8px; align-items: center; }
+    .box h2 i { color: var(--accent); }
+    .box > p { margin: 0 0 12px; color: var(--muted); font-size: 12px; }
+    .tbl td.l, .tbl th.l { text-align: left; }
+    .tag { font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: #f1f5f9; color: var(--text-2); }
+    .tag.gee { background: #f0fdfa; color: #0f766e; }
+    .tag.fc { background: #eef2ff; color: #4338ca; }
+    pre.log { background: #0f172a; color: #e2e8f0; padding: 10px 12px; border-radius: 10px; font-size: 11px; max-height: 260px; overflow: auto; white-space: pre-wrap; margin: 0; }
+    .denied { max-width: 460px; margin: 12vh auto; text-align: center; padding: 28px; }
+    .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+    .stat { padding: 12px 14px; }
+    .stat .k { font-size: 11.5px; color: var(--muted); }
+    .stat .v { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    @media (max-width: 860px) { .grid, .stat-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap" id="app">
+    <div class="ad-head">
+      <a class="btn" href="/" id="back"><i class="fa-solid fa-arrow-left"></i>Về bản đồ</a>
+      <div>
+        <h1>Quản trị dữ liệu</h1>
+        <p>CSDL PostgreSQL/PostGIS · schema <code>vientham</code></p>
+      </div>
+      <span class="sp"></span>
+      <button class="btn primary" id="reload"><i class="fa-solid fa-rotate"></i>Làm mới bộ nhớ đệm</button>
+    </div>
+    <div class="stat-row" id="stats"></div>
+    <div class="grid">
+      <section class="card box full">
+        <h2><i class="fa-solid fa-brain"></i>Đánh giá mô hình dự báo LST</h2>
+        <p>Chỉ tiêu tính trên từng ô 480 m. Hàng in đậm là phiên hiển thị mặc định.</p>
+        <div style="overflow-x:auto"><table class="tbl" id="metrics"></table></div>
+      </section>
+      <section class="card box">
+        <h2><i class="fa-solid fa-database"></i>Bảng dữ liệu</h2>
+        <p>Số dòng thực tế và dung lượng (gồm chỉ mục).</p>
+        <table class="tbl" id="tables"></table>
+      </section>
+      <section class="card box">
+        <h2><i class="fa-solid fa-eye"></i>View phục vụ thống kê</h2>
+        <p>Các truy vấn phân tích dựng sẵn trong CSDL.</p>
+        <table class="tbl" id="views"></table>
+        <h2 style="margin-top:16px"><i class="fa-solid fa-clock-rotate-left"></i>Nhật ký nạp dữ liệu</h2>
+        <p>Bảng <code>nhat_ky_nap</code>.</p>
+        <pre class="log" id="log">–</pre>
+      </section>
+    </div>
+  </div>
+  <script>
+    const token = new URLSearchParams(location.search).get('token') || '';
+    const $ = (s) => document.querySelector(s);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const fmt = (v, d = 2) => (v === null || v === undefined || !isFinite(v) ? '–' : (+v).toLocaleString('vi-VN', { minimumFractionDigits: d, maximumFractionDigits: d }));
+    const size = (b) => (b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : (b / 1024).toFixed(0) + ' kB');
+    const VIEW_DESC = {
+      v_gia_tri_o: 'Hợp nhất hiện trạng + dự báo theo ô', v_thong_ke_thanh_pho_thang: 'TB toàn TP theo tháng', v_thong_ke_phuong_nam: 'TB năm theo phường',
+      v_thong_ke_phuong_mua: 'Mùa khô / mùa mưa theo phường', v_xu_huong_phuong: 'Độ dốc xu hướng (regr_slope)', v_thong_ke_khu_vuc: 'Theo 3 khu vực cũ',
+      v_so_sanh_du_bao: 'Dự báo đối chiếu GEE từng ô', v_canh_bao_phuong: 'Phân cấp cảnh báo theo ngưỡng', v_xep_hang_mo_hinh: 'Xếp hạng mô hình theo RMSE',
+    };
+    $('#back').href = '/?token=' + encodeURIComponent(token);
+
+    async function load() {
+      const r = await fetch('/api/admin/summary', { headers: { 'x-admin-token': token } });
+      if (r.status === 403) {
+        document.getElementById('app').innerHTML = `<div class="card denied"><div class="empty"><div class="ic"><i class="fa-solid fa-lock"></i></div>
+          <h3>Cần mã quản trị</h3><p>Mở trang theo dạng <code>/admin?token=MÃ_QUẢN_TRỊ</code> (biến ADMIN_TOKEN trong file .env).</p>
+          <a class="btn" href="/"><i class="fa-solid fa-arrow-left"></i>Về bản đồ</a></div></div>`;
+        return;
+      }
+      const d = await r.json();
+      const meta = await (await fetch('/api/meta')).json();
+      const n = (t) => d.bang.find((x) => x.bang === t)?.so_dong ?? 0;
+      $('#stats').innerHTML = [
+        ['Phường/xã', n('don_vi_hanh_chinh')], ['Ô lưới 480 m', n('luoi_o')],
+        ['Giá trị hiện trạng GEE', n('quan_trac_o')], ['Giá trị dự báo', n('du_bao_o')],
+      ].map(([k, v]) => `<div class="card stat"><div class="k">${k}</div><div class="v">${(+v).toLocaleString('vi-VN')}</div></div>`).join('');
+      $('#tables').innerHTML = `<thead><tr><th class="l">Bảng</th><th>Số dòng</th><th>Dung lượng</th></tr></thead><tbody>${d.bang.map((t) => {
+        const tag = t.bang === 'quan_trac_o' ? ' <span class="tag gee">hiện trạng</span>' : ['du_bao_o', 'phien_du_bao', 'danh_gia_mo_hinh'].includes(t.bang) ? ' <span class="tag fc">dự báo</span>' : '';
+        return `<tr><td class="l"><code>${t.bang}</code>${tag}</td><td>${t.so_dong.toLocaleString('vi-VN')}</td><td>${size(t.dung_luong)}</td></tr>`;
+      }).join('')}<tr><td class="l"><b>Tổng schema</b></td><td></td><td><b>${esc(d.tong_dung_luong)}</b></td></tr></tbody>`;
+      $('#views').innerHTML = `<tbody>${d.view.map((v) => `<tr><td class="l"><code>${v}</code></td><td class="l" style="text-align:left">${VIEW_DESC[v] || ''}</td></tr>`).join('')}</tbody>`;
+      $('#log').textContent = d.nhat_ky.map((x) => `[${new Date(x.thoi_diem).toLocaleString('vi-VN')}] ${x.buoc}\n${JSON.stringify(x.chi_tiet, null, 1).slice(0, 900)}`).join('\n\n') || 'Chưa có';
+      const runs = meta.runs;
+      $('#metrics').innerHTML = `<thead><tr><th class="l">Phiên</th><th class="l">Loại</th><th>Train RMSE</th><th>Val RMSE</th><th>Test MAE</th><th>Test RMSE</th><th>Test R²</th><th>Test MAPE %</th><th>Bias</th><th>Số tháng</th></tr></thead><tbody>${runs.map((x) => {
+        const m = x.metrics, t = m.test || {};
+        return `<tr style="${x.mac_dinh ? 'font-weight:700' : ''}"><td class="l">${esc(x.ten)}</td><td class="l"><span class="tag ${x.ma_loai === 'GIA_LAP' ? '' : 'fc'}">${esc(x.ten_loai)}</span></td>
+          <td>${fmt(m.train?.rmse)}</td><td>${fmt(m.val?.rmse)}</td><td>${fmt(t.mae)}</td><td>${fmt(t.rmse)}</td><td>${fmt(t.r2, 3)}</td><td>${fmt(t.mape, 1)}</td><td>${fmt(t.bias)}</td><td>${x.months.length}</td></tr>`;
+      }).join('')}</tbody>`;
+    }
+    $('#reload').addEventListener('click', async () => {
+      const r = await fetch('/api/admin/reload', { method: 'POST', headers: { 'x-admin-token': token } });
+      $('#reload').innerHTML = r.ok ? '<i class="fa-solid fa-check"></i>Đã làm mới' : 'Lỗi';
+      setTimeout(() => { $('#reload').innerHTML = '<i class="fa-solid fa-rotate"></i>Làm mới bộ nhớ đệm'; }, 2000);
+      load();
+    });
+    load().catch((e) => { document.getElementById('app').insertAdjacentHTML('afterbegin', `<div class="callout warn">${esc(e.message)}</div>`); });
+  </script>
+</body>
+</html>

@@ -1,0 +1,1202 @@
+{
+  "10.66,106.67": {
+    "ten": "Thị trấn Tân Túc",
+    "quan": "Huyện Bình Chánh",
+    "lon": 106.67,
+    "lat": 10.66
+  },
+  "10.83,106.78": {
+    "ten": "Phường Hiệp Phú",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.78,
+    "lat": 10.83
+  },
+  "10.97,106.50": {
+    "ten": "Thị trấn Củ Chi",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.5,
+    "lat": 10.97
+  },
+  "10.86,106.82": {
+    "ten": "Phường Long Bình",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.82,
+    "lat": 10.86
+  },
+  "10.74,106.60": {
+    "ten": "Phường Bình Hưng Hòa",
+    "quan": "Quận Bình Tân",
+    "lon": 106.6,
+    "lat": 10.74
+  },
+  "10.81,106.42": {
+    "ten": "Phường Bình Hưng Hòa A",
+    "quan": "Quận Bình Tân",
+    "lon": 106.42,
+    "lat": 10.81
+  },
+  "10.57,106.51": {
+    "ten": "Xã An Phú Tây",
+    "quan": "Huyện Bình Chánh",
+    "lon": 106.51,
+    "lat": 10.57
+  },
+  "10.91,106.87": {
+    "ten": "Phường Long Phước",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.87,
+    "lat": 10.91
+  },
+  "11.02,106.39": {
+    "ten": "Xã An Nhơn Tây",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.39,
+    "lat": 11.02
+  },
+  "11.09,106.78": {
+    "ten": "Phường Bình Chiểu",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.78,
+    "lat": 11.09
+  },
+  "10.84,106.78": {
+    "ten": "Phường Long Thạnh Mỹ",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.78,
+    "lat": 10.84
+  },
+  "10.99,106.87": {
+    "ten": "Phường Bình Thọ",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.87,
+    "lat": 10.99
+  },
+  "10.91,106.91": {
+    "ten": "Phường Long Trường",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.91,
+    "lat": 10.91
+  },
+  "11.08,106.71": {
+    "ten": "Xã An Phú",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.71,
+    "lat": 11.08
+  },
+  "10.90,106.84": {
+    "ten": "Phường Phú Hữu",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.84,
+    "lat": 10.9
+  },
+  "10.93,106.73": {
+    "ten": "Phường Hiệp Bình Chánh",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.73,
+    "lat": 10.93
+  },
+  "10.77,106.80": {
+    "ten": "Phường Thảo Điền",
+    "quan": "TP. Thủ Đức (Khu Quận 2)",
+    "lon": 106.8,
+    "lat": 10.77
+  },
+  "10.79,106.60": {
+    "ten": "Phường Bình Hưng Hòa B",
+    "quan": "Quận Bình Tân",
+    "lon": 106.6,
+    "lat": 10.79
+  },
+  "11.09,106.55": {
+    "ten": "Xã Bình Mỹ",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.55,
+    "lat": 11.09
+  },
+  "10.97,106.75": {
+    "ten": "Phường Hiệp Bình Phước",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.75,
+    "lat": 10.97
+  },
+  "10.88,106.75": {
+    "ten": "Phường Linh Chiểu",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.75,
+    "lat": 10.88
+  },
+  "10.91,106.75": {
+    "ten": "Phường Linh Đông",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.75,
+    "lat": 10.91
+  },
+  "10.75,106.91": {
+    "ten": "Phường Phước Bình",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.91,
+    "lat": 10.75
+  },
+  "10.90,106.73": {
+    "ten": "Phường Linh Tây",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.73,
+    "lat": 10.9
+  },
+  "10.99,106.73": {
+    "ten": "Phường Linh Trung",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.73,
+    "lat": 10.99
+  },
+  "10.91,106.78": {
+    "ten": "Phường Linh Xuân",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.78,
+    "lat": 10.91
+  },
+  "11.15,106.69": {
+    "ten": "Xã Hòa Phú",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.69,
+    "lat": 11.15
+  },
+  "10.65,106.58": {
+    "ten": "Xã Bình Chánh",
+    "quan": "Huyện Bình Chánh",
+    "lon": 106.58,
+    "lat": 10.65
+  },
+  "10.95,106.94": {
+    "ten": "Phường Phước Long A",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.94,
+    "lat": 10.95
+  },
+  "10.88,106.87": {
+    "ten": "Phường Phước Long B",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.87,
+    "lat": 10.88
+  },
+  "10.95,106.69": {
+    "ten": "Phường Thạnh Xuân",
+    "quan": "Quận 12",
+    "lon": 106.69,
+    "lat": 10.95
+  },
+  "10.65,106.82": {
+    "ten": "Thị trấn Nhà Bè",
+    "quan": "Huyện Nhà Bè",
+    "lon": 106.82,
+    "lat": 10.65
+  },
+  "10.93,106.87": {
+    "ten": "Phường Trường Thạnh",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.87,
+    "lat": 10.93
+  },
+  "10.83,106.80": {
+    "ten": "Phường Tăng Nhơn Phú A",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.8,
+    "lat": 10.83
+  },
+  "10.77,106.62": {
+    "ten": "Phường Bình Trị Đông",
+    "quan": "Quận Bình Tân",
+    "lon": 106.62,
+    "lat": 10.77
+  },
+  "11.04,106.75": {
+    "ten": "Phường Tam Bình",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.75,
+    "lat": 11.04
+  },
+  "11.11,106.55": {
+    "ten": "Xã Nhuận Đức",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.55,
+    "lat": 11.11
+  },
+  "11.02,106.77": {
+    "ten": "Phường Tam Phú",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.77,
+    "lat": 11.02
+  },
+  "10.97,106.84": {
+    "ten": "Phường Trường Thọ",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.84,
+    "lat": 10.97
+  },
+  "10.81,106.66": {
+    "ten": "Phường 1",
+    "quan": "Quận Tân Bình",
+    "lon": 106.66,
+    "lat": 10.81
+  },
+  "10.93,106.86": {
+    "ten": "Phường Tăng Nhơn Phú B",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.86,
+    "lat": 10.93
+  },
+  "10.90,106.89": {
+    "ten": "Phường Hiệp Phú",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.89,
+    "lat": 10.9
+  },
+  "10.59,106.67": {
+    "ten": "Xã Hiệp Phước",
+    "quan": "Huyện Nhà Bè",
+    "lon": 106.67,
+    "lat": 10.59
+  },
+  "11.13,106.69": {
+    "ten": "Xã Phạm Văn Cội",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.69,
+    "lat": 11.13
+  },
+  "10.93,106.46": {
+    "ten": "Xã Phú Hòa Đông",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.46,
+    "lat": 10.93
+  },
+  "10.91,106.89": {
+    "ten": "Phường Long Bình",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.89,
+    "lat": 10.91
+  },
+  "10.91,106.80": {
+    "ten": "Phường Bình Chiểu",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.8,
+    "lat": 10.91
+  },
+  "10.95,106.73": {
+    "ten": "Phường Bình Thọ",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.73,
+    "lat": 10.95
+  },
+  "11.06,106.75": {
+    "ten": "Phường Hiệp Bình Chánh",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.75,
+    "lat": 11.06
+  },
+  "11.02,106.73": {
+    "ten": "Phường Hiệp Bình Phước",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.73,
+    "lat": 11.02
+  },
+  "10.99,106.71": {
+    "ten": "Phường Linh Chiểu",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.71,
+    "lat": 10.99
+  },
+  "10.68,106.46": {
+    "ten": "Xã Bình Hưng",
+    "quan": "Huyện Bình Chánh",
+    "lon": 106.46,
+    "lat": 10.68
+  },
+  "10.90,106.78": {
+    "ten": "Phường Linh Đông",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.78,
+    "lat": 10.9
+  },
+  "10.75,106.37": {
+    "ten": "Phường Bình Trị Đông A",
+    "quan": "Quận Bình Tân",
+    "lon": 106.37,
+    "lat": 10.75
+  },
+  "11.00,106.86": {
+    "ten": "Phường Linh Tây",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.86,
+    "lat": 11
+  },
+  "10.97,106.62": {
+    "ten": "Xã Phú Mỹ Hưng",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.62,
+    "lat": 10.97
+  },
+  "10.66,106.57": {
+    "ten": "Xã Bình Lợi",
+    "quan": "Huyện Bình Chánh",
+    "lon": 106.57,
+    "lat": 10.66
+  },
+  "10.81,106.62": {
+    "ten": "Phường Tân Sơn Nhì",
+    "quan": "Quận Tân Phú",
+    "lon": 106.62,
+    "lat": 10.81
+  },
+  "10.75,106.76": {
+    "ten": "Phường An Phú",
+    "quan": "TP. Thủ Đức (Khu Quận 2)",
+    "lon": 106.76,
+    "lat": 10.75
+  },
+  "10.97,106.86": {
+    "ten": "Phường Linh Trung",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.86,
+    "lat": 10.97
+  },
+  "10.95,106.71": {
+    "ten": "Phường Linh Xuân",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.71,
+    "lat": 10.95
+  },
+  "10.90,106.75": {
+    "ten": "Phường Tam Bình",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.75,
+    "lat": 10.9
+  },
+  "10.90,106.48": {
+    "ten": "Thị trấn Hóc Môn",
+    "quan": "Huyện Hóc Môn",
+    "lon": 106.48,
+    "lat": 10.9
+  },
+  "10.91,106.50": {
+    "ten": "Xã Bà Điểm",
+    "quan": "Huyện Hóc Môn",
+    "lon": 106.5,
+    "lat": 10.91
+  },
+  "10.97,106.91": {
+    "ten": "Phường Long Phước",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.91,
+    "lat": 10.97
+  },
+  "10.99,106.75": {
+    "ten": "Phường Tam Phú",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.75,
+    "lat": 10.99
+  },
+  "10.97,106.73": {
+    "ten": "Phường Trường Thọ",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.73,
+    "lat": 10.97
+  },
+  "10.75,106.93": {
+    "ten": "Phường Long Thạnh Mỹ",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.93,
+    "lat": 10.75
+  },
+  "10.95,106.86": {
+    "ten": "Phường Long Trường",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.86,
+    "lat": 10.95
+  },
+  "10.79,106.82": {
+    "ten": "Phường Phú Hữu",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.82,
+    "lat": 10.79
+  },
+  "10.97,106.67": {
+    "ten": "Xã Đông Thạnh",
+    "quan": "Huyện Hóc Môn",
+    "lon": 106.67,
+    "lat": 10.97
+  },
+  "10.54,106.40": {
+    "ten": "Xã Đa Phước",
+    "quan": "Huyện Bình Chánh",
+    "lon": 106.4,
+    "lat": 10.54
+  },
+  "11.04,106.71": {
+    "ten": "Phường Bình Chiểu",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.71,
+    "lat": 11.04
+  },
+  "10.99,106.69": {
+    "ten": "Xã Nhị Bình",
+    "quan": "Huyện Hóc Môn",
+    "lon": 106.69,
+    "lat": 10.99
+  },
+  "11.13,106.60": {
+    "ten": "Xã Phước Hiệp",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.6,
+    "lat": 11.13
+  },
+  "10.72,106.93": {
+    "ten": "Phường Phước Bình",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.93,
+    "lat": 10.72
+  },
+  "10.86,106.77": {
+    "ten": "Phường Bình Thọ",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.77,
+    "lat": 10.86
+  },
+  "10.93,106.71": {
+    "ten": "Phường Hiệp Bình Chánh",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.71,
+    "lat": 10.93
+  },
+  "10.79,106.50": {
+    "ten": "Phường Bình Trị Đông B",
+    "quan": "Quận Bình Tân",
+    "lon": 106.5,
+    "lat": 10.79
+  },
+  "10.90,106.77": {
+    "ten": "Phường Hiệp Bình Phước",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.77,
+    "lat": 10.9
+  },
+  "11.09,106.80": {
+    "ten": "Phường Linh Chiểu",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.8,
+    "lat": 11.09
+  },
+  "10.74,106.58": {
+    "ten": "Phường Tân Tạo",
+    "quan": "Quận Bình Tân",
+    "lon": 106.58,
+    "lat": 10.74
+  },
+  "10.88,106.64": {
+    "ten": "Phường Thạnh Lộc",
+    "quan": "Quận 12",
+    "lon": 106.64,
+    "lat": 10.88
+  },
+  "10.74,106.67": {
+    "ten": "Phường 1",
+    "quan": "Quận 8",
+    "lon": 106.67,
+    "lat": 10.74
+  },
+  "10.97,106.82": {
+    "ten": "Phường Linh Đông",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.82,
+    "lat": 10.97
+  },
+  "10.95,106.87": {
+    "ten": "Phường Phước Long A",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.87,
+    "lat": 10.95
+  },
+  "11.08,106.77": {
+    "ten": "Phường Linh Tây",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.77,
+    "lat": 11.08
+  },
+  "10.93,106.80": {
+    "ten": "Phường Linh Trung",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.8,
+    "lat": 10.93
+  },
+  "10.97,106.89": {
+    "ten": "Phường Phước Long B",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.89,
+    "lat": 10.97
+  },
+  "10.68,106.75": {
+    "ten": "Xã Long Thới",
+    "quan": "Huyện Nhà Bè",
+    "lon": 106.75,
+    "lat": 10.68
+  },
+  "10.95,106.82": {
+    "ten": "Phường Linh Xuân",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.82,
+    "lat": 10.95
+  },
+  "10.86,106.75": {
+    "ten": "Phường Tam Bình",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.75,
+    "lat": 10.86
+  },
+  "11.00,106.84": {
+    "ten": "Phường Tam Phú",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.84,
+    "lat": 11
+  },
+  "10.90,106.87": {
+    "ten": "Phường Trường Thạnh",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.87,
+    "lat": 10.9
+  },
+  "10.95,106.75": {
+    "ten": "Phường Trường Thọ",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.75,
+    "lat": 10.95
+  },
+  "10.75,106.66": {
+    "ten": "Phường 1",
+    "quan": "Quận 5",
+    "lon": 106.66,
+    "lat": 10.75
+  },
+  "10.86,106.67": {
+    "ten": "Phường Hiệp Thành",
+    "quan": "Quận 12",
+    "lon": 106.67,
+    "lat": 10.86
+  },
+  "10.70,106.94": {
+    "ten": "Phường Tăng Nhơn Phú A",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.94,
+    "lat": 10.7
+  },
+  "10.77,106.58": {
+    "ten": "Phường Tân Tạo A",
+    "quan": "Quận Bình Tân",
+    "lon": 106.58,
+    "lat": 10.77
+  },
+  "10.56,106.40": {
+    "ten": "Xã Hưng Long",
+    "quan": "Huyện Bình Chánh",
+    "lon": 106.4,
+    "lat": 10.56
+  },
+  "10.93,106.77": {
+    "ten": "Phường Bình Chiểu",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.77,
+    "lat": 10.93
+  },
+  "10.63,106.48": {
+    "ten": "Xã Lê Minh Xuân",
+    "quan": "Huyện Bình Chánh",
+    "lon": 106.48,
+    "lat": 10.63
+  },
+  "10.77,106.82": {
+    "ten": "Phường Tăng Nhơn Phú B",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.82,
+    "lat": 10.77
+  },
+  "11.00,106.91": {
+    "ten": "Phường Hiệp Phú",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.91,
+    "lat": 11
+  },
+  "10.84,106.75": {
+    "ten": "Phường Bình Thọ",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.75,
+    "lat": 10.84
+  },
+  "10.77,106.60": {
+    "ten": "Phường An Lạc",
+    "quan": "Quận Bình Tân",
+    "lon": 106.6,
+    "lat": 10.77
+  },
+  "10.83,106.93": {
+    "ten": "Phường Long Bình",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.93,
+    "lat": 10.83
+  },
+  "10.57,106.73": {
+    "ten": "Xã Nhơn Đức",
+    "quan": "Huyện Nhà Bè",
+    "lon": 106.73,
+    "lat": 10.57
+  },
+  "10.93,106.82": {
+    "ten": "Phường Hiệp Bình Chánh",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.82,
+    "lat": 10.93
+  },
+  "10.91,106.77": {
+    "ten": "Phường Hiệp Bình Phước",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.77,
+    "lat": 10.91
+  },
+  "10.88,106.73": {
+    "ten": "Phường Linh Chiểu",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.73,
+    "lat": 10.88
+  },
+  "11.09,106.84": {
+    "ten": "Phường Linh Đông",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.84,
+    "lat": 11.09
+  },
+  "10.91,106.94": {
+    "ten": "Phường Long Phước",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.94,
+    "lat": 10.91
+  },
+  "10.72,106.94": {
+    "ten": "Phường Long Thạnh Mỹ",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.94,
+    "lat": 10.72
+  },
+  "10.81,106.58": {
+    "ten": "Xã Phạm Văn Hai",
+    "quan": "Huyện Bình Chánh",
+    "lon": 106.58,
+    "lat": 10.81
+  },
+  "10.54,106.42": {
+    "ten": "Xã Phong Phú",
+    "quan": "Huyện Bình Chánh",
+    "lon": 106.42,
+    "lat": 10.54
+  },
+  "10.74,106.73": {
+    "ten": "Phường Tân Thuận Đông",
+    "quan": "Quận 7",
+    "lon": 106.73,
+    "lat": 10.74
+  },
+  "11.02,106.84": {
+    "ten": "Phường Linh Tây",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.84,
+    "lat": 11.02
+  },
+  "10.83,106.60": {
+    "ten": "Xã Tân Hiệp",
+    "quan": "Huyện Hóc Môn",
+    "lon": 106.6,
+    "lat": 10.83
+  },
+  "10.90,106.80": {
+    "ten": "Phường Linh Trung",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.8,
+    "lat": 10.9
+  },
+  "11.08,106.75": {
+    "ten": "Phường Linh Xuân",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.75,
+    "lat": 11.08
+  },
+  "10.88,106.77": {
+    "ten": "Phường Tam Bình",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.77,
+    "lat": 10.88
+  },
+  "10.84,106.69": {
+    "ten": "Phường Thới An",
+    "quan": "Quận 12",
+    "lon": 106.69,
+    "lat": 10.84
+  },
+  "10.72,106.91": {
+    "ten": "Phường Long Trường",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.91,
+    "lat": 10.72
+  },
+  "10.97,106.87": {
+    "ten": "Phường Phú Hữu",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.87,
+    "lat": 10.97
+  },
+  "11.08,106.69": {
+    "ten": "Xã Phước Thạnh",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.69,
+    "lat": 11.08
+  },
+  "10.95,106.89": {
+    "ten": "Phường Phước Bình",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.89,
+    "lat": 10.95
+  },
+  "10.63,106.51": {
+    "ten": "Xã Quy Đức",
+    "quan": "Huyện Bình Chánh",
+    "lon": 106.51,
+    "lat": 10.63
+  },
+  "10.65,106.66": {
+    "ten": "Xã Tân Kiên",
+    "quan": "Huyện Bình Chánh",
+    "lon": 106.66,
+    "lat": 10.65
+  },
+  "11.11,106.60": {
+    "ten": "Xã Phước Vĩnh An",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.6,
+    "lat": 11.11
+  },
+  "11.11,106.77": {
+    "ten": "Phường Tam Phú",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.77,
+    "lat": 11.11
+  },
+  "10.59,106.50": {
+    "ten": "Xã Tân Nhựt",
+    "quan": "Huyện Bình Chánh",
+    "lon": 106.5,
+    "lat": 10.59
+  },
+  "10.81,106.93": {
+    "ten": "Phường Phước Long A",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.93,
+    "lat": 10.81
+  },
+  "10.88,106.53": {
+    "ten": "Xã Tân Thới Nhì",
+    "quan": "Huyện Hóc Môn",
+    "lon": 106.53,
+    "lat": 10.88
+  },
+  "10.83,106.62": {
+    "ten": "Phường Tân Chánh Hiệp",
+    "quan": "Quận 12",
+    "lon": 106.62,
+    "lat": 10.83
+  },
+  "10.86,106.60": {
+    "ten": "Xã Tân Xuân",
+    "quan": "Huyện Hóc Môn",
+    "lon": 106.6,
+    "lat": 10.86
+  },
+  "10.95,106.77": {
+    "ten": "Phường Trường Thọ",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.77,
+    "lat": 10.95
+  },
+  "10.93,106.89": {
+    "ten": "Phường Phước Long B",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.89,
+    "lat": 10.93
+  },
+  "10.97,106.66": {
+    "ten": "Xã Thới Tam Thôn",
+    "quan": "Huyện Hóc Môn",
+    "lon": 106.66,
+    "lat": 10.97
+  },
+  "11.08,106.67": {
+    "ten": "Xã Tân An Hội",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.67,
+    "lat": 11.08
+  },
+  "10.77,106.66": {
+    "ten": "Phường 1",
+    "quan": "Quận 10",
+    "lon": 106.66,
+    "lat": 10.77
+  },
+  "10.75,106.73": {
+    "ten": "Phường Tân Thuận Tây",
+    "quan": "Quận 7",
+    "lon": 106.73,
+    "lat": 10.75
+  },
+  "10.79,106.48": {
+    "ten": "Phường An Lạc A",
+    "quan": "Quận Bình Tân",
+    "lon": 106.48,
+    "lat": 10.79
+  },
+  "10.90,106.91": {
+    "ten": "Phường Trường Thạnh",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.91,
+    "lat": 10.9
+  },
+  "10.95,106.51": {
+    "ten": "Xã Tân Phú Trung",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.51,
+    "lat": 10.95
+  },
+  "10.93,106.75": {
+    "ten": "Phường Bình Chiểu",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.75,
+    "lat": 10.93
+  },
+  "10.74,106.69": {
+    "ten": "Xã Tân Quý Tây",
+    "quan": "Huyện Bình Chánh",
+    "lon": 106.69,
+    "lat": 10.74
+  },
+  "11.04,106.94": {
+    "ten": "Phường Tăng Nhơn Phú A",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.94,
+    "lat": 11.04
+  },
+  "10.84,106.80": {
+    "ten": "Phường Tăng Nhơn Phú B",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.8,
+    "lat": 10.84
+  },
+  "10.77,106.44": {
+    "ten": "Phường Bình Hưng Hòa",
+    "quan": "Quận Bình Tân",
+    "lon": 106.44,
+    "lat": 10.77
+  },
+  "11.11,106.84": {
+    "ten": "Phường Bình Thọ",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.84,
+    "lat": 11.11
+  },
+  "10.79,106.78": {
+    "ten": "Phường An Khánh",
+    "quan": "TP. Thủ Đức (Khu Quận 2)",
+    "lon": 106.78,
+    "lat": 10.79
+  },
+  "11.00,106.67": {
+    "ten": "Xã Trung Chánh",
+    "quan": "Huyện Hóc Môn",
+    "lon": 106.67,
+    "lat": 11
+  },
+  "10.81,106.69": {
+    "ten": "Phường 1",
+    "quan": "Quận Bình Thạnh",
+    "lon": 106.69,
+    "lat": 10.81
+  },
+  "10.90,106.42": {
+    "ten": "Xã Tân Thạnh Đông",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.42,
+    "lat": 10.9
+  },
+  "10.74,106.66": {
+    "ten": "Phường 2",
+    "quan": "Quận 8",
+    "lon": 106.66,
+    "lat": 10.74
+  },
+  "10.77,106.46": {
+    "ten": "Phường Bình Hưng Hòa A",
+    "quan": "Quận Bình Tân",
+    "lon": 106.46,
+    "lat": 10.77
+  },
+  "10.84,106.67": {
+    "ten": "Phường 1",
+    "quan": "Quận Gò Vấp",
+    "lon": 106.67,
+    "lat": 10.84
+  },
+  "10.81,106.57": {
+    "ten": "Xã Vĩnh Lộc A",
+    "quan": "Huyện Bình Chánh",
+    "lon": 106.57,
+    "lat": 10.81
+  },
+  "10.48,106.69": {
+    "ten": "Xã Phú Xuân",
+    "quan": "Huyện Nhà Bè",
+    "lon": 106.69,
+    "lat": 10.48
+  },
+  "10.88,106.62": {
+    "ten": "Xã Xuân Thới Đông",
+    "quan": "Huyện Hóc Môn",
+    "lon": 106.62,
+    "lat": 10.88
+  },
+  "10.75,106.64": {
+    "ten": "Phường 1",
+    "quan": "Quận 6",
+    "lon": 106.64,
+    "lat": 10.75
+  },
+  "11.02,106.75": {
+    "ten": "Phường Hiệp Bình Chánh",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.75,
+    "lat": 11.02
+  },
+  "10.83,106.58": {
+    "ten": "Xã Vĩnh Lộc B",
+    "quan": "Huyện Bình Chánh",
+    "lon": 106.58,
+    "lat": 10.83
+  },
+  "11.11,106.46": {
+    "ten": "Xã Tân Thạnh Tây",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.46,
+    "lat": 11.11
+  },
+  "10.74,106.94": {
+    "ten": "Phường Hiệp Phú",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.94,
+    "lat": 10.74
+  },
+  "10.84,106.93": {
+    "ten": "Phường Long Bình",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.93,
+    "lat": 10.84
+  },
+  "11.06,106.77": {
+    "ten": "Phường Hiệp Bình Phước",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.77,
+    "lat": 11.06
+  },
+  "10.81,106.71": {
+    "ten": "Phường 2",
+    "quan": "Quận Bình Thạnh",
+    "lon": 106.71,
+    "lat": 10.81
+  },
+  "10.84,106.87": {
+    "ten": "Phường Long Phước",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.87,
+    "lat": 10.84
+  },
+  "10.74,106.87": {
+    "ten": "Phường Long Thạnh Mỹ",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.87,
+    "lat": 10.74
+  },
+  "10.56,106.50": {
+    "ten": "Thị trấn Tân Túc",
+    "quan": "Huyện Bình Chánh",
+    "lon": 106.5,
+    "lat": 10.56
+  },
+  "10.90,106.86": {
+    "ten": "Phường Long Trường",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.86,
+    "lat": 10.9
+  },
+  "10.77,106.77": {
+    "ten": "Phường Bình An",
+    "quan": "TP. Thủ Đức (Khu Quận 2)",
+    "lon": 106.77,
+    "lat": 10.77
+  },
+  "10.95,106.84": {
+    "ten": "Phường Linh Chiểu",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.84,
+    "lat": 10.95
+  },
+  "10.84,106.94": {
+    "ten": "Phường Phú Hữu",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.94,
+    "lat": 10.84
+  },
+  "10.74,106.64": {
+    "ten": "Phường 2",
+    "quan": "Quận 6",
+    "lon": 106.64,
+    "lat": 10.74
+  },
+  "10.90,106.82": {
+    "ten": "Phường Phước Bình",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.82,
+    "lat": 10.9
+  },
+  "10.86,106.86": {
+    "ten": "Phường Phước Long A",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.86,
+    "lat": 10.86
+  },
+  "11.04,106.87": {
+    "ten": "Phường Linh Đông",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.87,
+    "lat": 11.04
+  },
+  "10.93,106.39": {
+    "ten": "Xã Tân Thông Hội",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.39,
+    "lat": 10.93
+  },
+  "10.91,106.86": {
+    "ten": "Phường Phước Long B",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.86,
+    "lat": 10.91
+  },
+  "10.86,106.93": {
+    "ten": "Phường Trường Thạnh",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.93,
+    "lat": 10.86
+  },
+  "11.00,106.87": {
+    "ten": "Phường Linh Tây",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.87,
+    "lat": 11
+  },
+  "10.79,106.62": {
+    "ten": "Phường Tây Thạnh",
+    "quan": "Quận Tân Phú",
+    "lon": 106.62,
+    "lat": 10.79
+  },
+  "10.79,106.71": {
+    "ten": "Phường 3",
+    "quan": "Quận Bình Thạnh",
+    "lon": 106.71,
+    "lat": 10.79
+  },
+  "10.81,106.60": {
+    "ten": "Phường Bình Hưng Hòa B",
+    "quan": "Quận Bình Tân",
+    "lon": 106.6,
+    "lat": 10.81
+  },
+  "11.09,106.67": {
+    "ten": "Xã Thái Mỹ",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.67,
+    "lat": 11.09
+  },
+  "10.97,106.71": {
+    "ten": "Phường Linh Trung",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.71,
+    "lat": 10.97
+  },
+  "10.99,106.86": {
+    "ten": "Phường Linh Xuân",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.86,
+    "lat": 10.99
+  },
+  "10.79,106.51": {
+    "ten": "Xã An Phú Tây",
+    "quan": "Huyện Bình Chánh",
+    "lon": 106.51,
+    "lat": 10.79
+  },
+  "10.65,106.48": {
+    "ten": "Xã Bình Chánh",
+    "quan": "Huyện Bình Chánh",
+    "lon": 106.48,
+    "lat": 10.65
+  },
+  "10.61,106.77": {
+    "ten": "Xã Phước Kiển",
+    "quan": "Huyện Nhà Bè",
+    "lon": 106.77,
+    "lat": 10.61
+  },
+  "11.11,106.75": {
+    "ten": "Xã Trung An",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.75,
+    "lat": 11.11
+  },
+  "11.13,106.62": {
+    "ten": "Xã Trung Lập Hạ",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.62,
+    "lat": 11.13
+  },
+  "11.06,106.66": {
+    "ten": "Xã Trung Lập Thượng",
+    "quan": "Huyện Củ Chi",
+    "lon": 106.66,
+    "lat": 11.06
+  },
+  "10.81,106.94": {
+    "ten": "Phường Tăng Nhơn Phú A",
+    "quan": "TP. Thủ Đức (Khu Quận 9)",
+    "lon": 106.94,
+    "lat": 10.81
+  },
+  "11.02,106.86": {
+    "ten": "Phường Tam Bình",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.86,
+    "lat": 11.02
+  },
+  "10.91,106.73": {
+    "ten": "Phường Tam Phú",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.73,
+    "lat": 10.91
+  },
+  "11.00,106.73": {
+    "ten": "Phường Trường Thọ",
+    "quan": "TP. Thủ Đức (Khu Thủ Đức)",
+    "lon": 106.73,
+    "lat": 11
+  }
+}

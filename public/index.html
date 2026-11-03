@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LST Forecast · Nhiệt độ bề mặt TP.HCM</title>
+  <meta name="description" content="WebGIS giám sát và dự báo nhiệt độ bề mặt đất (LST) cho 168 phường/xã TP.HCM — dữ liệu Google Earth Engine 2020–2026, mô hình học máy, PostgreSQL/PostGIS." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230f172a'/%3E%3Crect x='7' y='18' width='3.4' height='7' rx='1' fill='%2300c8ff'/%3E%3Crect x='12.2' y='14' width='3.4' height='11' rx='1' fill='%2322c55e'/%3E%3Crect x='17.4' y='10' width='3.4' height='15' rx='1' fill='%23facc15'/%3E%3Crect x='22.6' y='6' width='3.4' height='19' rx='1' fill='%23ef4444'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@500;600;700&display=swap&subset=vietnamese" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/style.css?v=4" />
+</head>
+<body class="booting">
+
+  <!-- ============ MÀN HÌNH KHỞI ĐỘNG ============ -->
+  <div id="splash" aria-live="polite">
+    <div class="sp-inner">
+      <div class="sp-stripes" id="spStripes" aria-hidden="true"></div>
+      <h1 class="sp-title">LST Forecast</h1>
+      <p class="sp-sub">Nhiệt độ bề mặt đất TP. Hồ Chí Minh · 168 phường/xã · 2020–2027</p>
+      <div class="sp-prog"><i id="spFill"></i></div>
+      <p class="sp-text" id="spText">Đang kết nối cơ sở dữ liệu…</p>
+    </div>
+  </div>
+
+  <div class="app" id="layout">
+    <!-- ============ THANH ĐIỀU HƯỚNG DỌC ============ -->
+    <nav class="rail" id="rail" aria-label="Điều hướng">
+      <a class="rail-logo" href="./" title="LST Forecast · TP.HCM"><i></i><i></i><i></i><i></i></a>
+      <button data-pane="overview" class="on" title="Cảnh báo & xếp hạng phường/xã"><i class="fa-solid fa-ranking-star"></i><span>Xếp hạng</span></button>
+      <button data-pane="ward" title="Chi tiết phường/xã đang chọn"><i class="fa-solid fa-location-dot"></i><span>Phường</span></button>
+      <button data-pane="model" title="So sánh mô hình dự báo"><i class="fa-solid fa-brain"></i><span>Mô hình</span></button>
+      <button data-pane="stats" title="Thống kê toàn thành phố"><i class="fa-solid fa-chart-column"></i><span>Thống kê</span></button>
+      <button data-pane="weather" title="Thời tiết 7 ngày"><i class="fa-solid fa-cloud-sun"></i><span>7 ngày</span></button>
+      <span class="rail-sp"></span>
+      <button class="rail-3d" id="btn3d" title="Xem mô hình 3D"><i class="fa-solid fa-cube"></i><span>3D</span></button>
+      <a class="rail-admin" id="roleChip" href="#" hidden title="Trang quản trị"><i class="fa-solid fa-user-shield"></i><span>Quản trị</span></a>
+      <div class="status" id="dbStatus" title="Trạng thái CSDL"><span class="dot"></span><span class="txt">CSDL</span></div>
+    </nav>
+
+    <!-- ============ NGĂN KÉO NỘI DUNG ============ -->
+    <aside class="drawer" id="drawer" aria-label="Nội dung">
+      <header class="dr-head">
+        <div>
+          <span class="dr-kicker">LST Forecast · TP.HCM</span>
+          <h2 id="drTitle">Cảnh báo &amp; xếp hạng</h2>
+        </div>
+        <button class="icon-btn ghost" id="drClose" title="Thu ngăn kéo" aria-label="Thu ngăn kéo"><i class="fa-solid fa-angles-left"></i></button>
+      </header>
+
+      <!-- Cảnh báo & xếp hạng -->
+      <div class="pane" id="tab-overview">
+        <section class="sec thr-card">
+          <div class="sec-row">
+            <h3><i class="fa-solid fa-triangle-exclamation"></i>Ngưỡng cảnh báo</h3>
+            <output class="thr-val" id="thrVal" for="thrRange">40 °C</output>
+          </div>
+          <input type="range" id="thrRange" min="30" max="48" step="0.5" value="40" aria-label="Ngưỡng cảnh báo LST" />
+          <p class="thr-text" id="thrText">–</p>
+          <div class="classbar" id="classBar" aria-label="Phân bố mức nhiệt các phường"></div>
+          <div class="classleg" id="classLeg"></div>
+        </section>
+        <section class="sec rank-card">
+          <div class="sec-row">
+            <h3><i class="fa-solid fa-list-ol"></i>Xếp hạng phường/xã</h3>
+            <button class="mini-btn" id="rankSort" type="button" title="Đảo thứ tự"><i class="fa-solid fa-arrow-down-wide-short"></i><span>Nóng nhất</span></button>
+          </div>
+          <div class="rank-tools">
+            <div class="filter">
+              <i class="fa-solid fa-filter"></i>
+              <input id="rankFilter" type="text" placeholder="Lọc theo tên…" aria-label="Lọc phường/xã" />
+            </div>
+            <select class="sel sm" id="regionSel" aria-label="Khu vực">
+              <option value="">Cả 3 khu vực cũ</option>
+              <option value="TP.HCM cũ">TP.HCM cũ</option>
+              <option value="Bình Dương cũ">Bình Dương cũ</option>
+              <option value="Bà Rịa – Vũng Tàu cũ">Bà Rịa – Vũng Tàu cũ</option>
+            </select>
+          </div>
+          <div class="rank-list" id="rankList" role="list"></div>
+          <div class="rank-foot">
+            <span id="rankCount">–</span>
+            <button class="mini-btn" id="btnCsv" type="button"><i class="fa-solid fa-file-csv"></i>Tải CSV</button>
+          </div>
+        </section>
+      </div>
+      <div class="pane scroll" id="tab-ward" hidden></div>
+      <div class="pane scroll" id="tab-model" hidden></div>
+      <div class="pane scroll" id="tab-stats" hidden></div>
+      <div class="pane scroll" id="tab-weather" hidden></div>
+    </aside>
+
+    <!-- ============ BẢN ĐỒ ============ -->
+    <main class="stage" id="mapcard">
+      <div class="mapwrap">
+        <div id="map" aria-label="Bản đồ nhiệt độ bề mặt"></div>
+
+        <!-- Tháng đang xem + chỉ số nhanh -->
+        <section class="hud now-card" aria-live="polite">
+          <div class="seg mode" id="modeSeg" role="tablist" aria-label="Loại dữ liệu">
+            <button data-mode="gee" class="on" role="tab"><i class="fa-solid fa-satellite"></i><span>Hiện trạng GEE</span></button>
+            <button data-mode="run" role="tab"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Dự báo</span></button>
+          </div>
+          <label class="run-pick" id="runPick" hidden>
+            <span class="sr-only">Mô hình dự báo</span>
+            <select class="sel" id="runSel" title="Chọn mô hình hoặc kịch bản"></select>
+          </label>
+          <div class="cmp-seg seg sm" id="cmpSeg" hidden>
+            <button data-cmp="pred" class="on">Dự báo</button>
+            <button data-cmp="obs">Thực tế GEE</button>
+            <button data-cmp="err">Sai số</button>
+          </div>
+          <div class="now-head">
+            <div class="now-swatch" id="nowSwatch"></div>
+            <div class="now-main">
+              <div class="now-month" id="nowMonth">–</div>
+              <div class="now-line"><span id="nowSrc"></span><span class="season" id="nowSeason">–</span></div>
+            </div>
+          </div>
+          <p class="now-desc" id="mapTitleP">–</p>
+          <div class="kpis">
+            <div class="kpi"><span class="k" id="kpiMeanK">Trung bình toàn TP</span><b class="v" id="kpiMean">–</b><span class="s" id="kpiMeanSub">&nbsp;</span></div>
+            <div class="kpi"><span class="k" id="kpiDeltaK">So với cùng kỳ</span><b class="v" id="kpiDelta">–</b><span class="s" id="kpiDeltaSub">&nbsp;</span></div>
+            <div class="kpi wide"><span class="k" id="kpiHotK">Phường/xã nóng nhất</span><button class="v link" id="kpiHot" type="button">–</button><span class="s" id="kpiHotSub">&nbsp;</span></div>
+          </div>
+        </section>
+
+        <!-- Tìm kiếm + lớp bản đồ -->
+        <div class="hud-right">
+          <div class="search" role="search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="searchInput" type="text" autocomplete="off" placeholder="Tìm phường/xã, địa chỉ, “10.77, 106.70”" aria-label="Tìm kiếm" />
+            <div id="searchResults" class="search-results" role="listbox"></div>
+          </div>
+          <div class="hud layers">
+            <div class="seg sm base" id="baseSeg" aria-label="Bản đồ nền">
+              <button data-base="google" class="on"><i class="fa-solid fa-map"></i>Google Map</button>
+              <button data-base="sat"><i class="fa-solid fa-earth-asia"></i>Vệ tinh</button>
+            </div>
+            <label class="op-row" title="Độ đậm lớp nhiệt">
+              <span>Độ đậm lớp nhiệt</span>
+              <input type="range" id="opRange" min="20" max="100" value="85" aria-label="Độ đậm lớp nhiệt" />
+              <output id="opVal">85%</output>
+            </label>
+          </div>
+        </div>
+
+        <div class="map-tools">
+          <button class="icon-btn" id="btnHome" title="Toàn thành phố"><i class="fa-solid fa-house"></i></button>
+          <button class="icon-btn" id="btnZoomIn" title="Phóng to"><i class="fa-solid fa-plus"></i></button>
+          <button class="icon-btn" id="btnZoomOut" title="Thu nhỏ"><i class="fa-solid fa-minus"></i></button>
+          <button class="icon-btn on" id="btnOutline" title="Bật/tắt ranh giới phường"><i class="fa-solid fa-vector-square"></i></button>
+          <button class="icon-btn" id="btnLocate" title="Vị trí của tôi"><i class="fa-solid fa-location-crosshairs"></i></button>
+        </div>
+
+        <!-- Chú giải dọc -->
+        <div class="legend" id="legend">
+          <b class="lg-title" id="lgTitle">LST °C</b>
+          <span class="lg-end hi" id="lgHigh">Nóng</span>
+          <div class="lg-body">
+            <div class="lg-ticks" id="lgTicks"></div>
+            <div class="lg-bar-wrap">
+              <div class="lg-bar" id="lgBar"></div>
+              <div class="lg-marker" id="lgMarker"><b id="lgMarkerV">0</b><i></i></div>
+            </div>
+          </div>
+          <span class="lg-end" id="lgLow">Mát</span>
+          <span class="lg-sub" id="lgSub">ảnh 30 m</span>
+        </div>
+
+        <div class="readout" id="readout">
+          <i class="fa-solid fa-crosshairs"></i>
+          <span class="xy" id="roXY">Di chuột lên bản đồ để xem giá trị</span>
+          <b class="pv" id="roVal"></b>
+        </div>
+
+        <div class="tip" id="tip" hidden></div>
+        <div class="busy" id="busy" hidden><i class="fa-solid fa-circle-notch fa-spin"></i><span id="busyT">Đang tải ảnh…</span></div>
+
+        <!-- Dock thời gian: mỗi vạch là 1 tháng, màu = LST trung bình toàn thành phố -->
+        <div class="dock timeline">
+          <div class="tl-ctrl">
+            <button class="icon-btn ghost" id="tlPrev" title="Tháng trước (←)"><i class="fa-solid fa-backward-step"></i></button>
+            <button class="play" id="tlPlay" title="Chạy theo thời gian (phím cách)"><i class="fa-solid fa-play"></i></button>
+            <button class="icon-btn ghost" id="tlNext" title="Tháng sau (→)"><i class="fa-solid fa-forward-step"></i></button>
+          </div>
+          <div class="tl-main">
+            <div class="stripes" id="stripes" role="slider" tabindex="0" aria-label="Chọn tháng"></div>
+            <div class="tl-axis" id="tlAxis"></div>
+          </div>
+          <div class="tl-side">
+            <select class="sel sm" id="speedSel" title="Tốc độ">
+              <option value="2200">Chậm</option>
+              <option value="1300" selected>Vừa</option>
+              <option value="700">Nhanh</option>
+            </select>
+            <div class="tl-key"><span class="k-obs"></span>Quan trắc<span class="k-fc"></span>Dự báo</div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ============ CHẾ ĐỘ 3D ============ -->
+  <div id="v3d" class="v3d" hidden>
+    <canvas id="v3dCanvas"></canvas>
+    <header class="v3d-top">
+      <div class="v3d-title">
+        <span class="v3d-badge">3D</span>
+        <div>
+          <h2 id="v3dTitle">Nhiệt độ bề mặt theo phường/xã</h2>
+          <p id="v3dSub">–</p>
+        </div>
+      </div>
+      <div class="v3d-actions">
+        <div class="seg sm" id="v3dLayout" title="Bố cục khối">
+          <button data-gap="0" class="on">Liền khối</button>
+          <button data-gap="1">Tách 3 vùng cũ</button>
+        </div>
+        <button class="icon-btn" id="v3dRotate" title="Tự xoay"><i class="fa-solid fa-rotate"></i></button>
+        <button class="icon-btn" id="v3dReset" title="Đặt lại góc nhìn"><i class="fa-solid fa-expand"></i></button>
+        <button class="btn-exit" id="v3dExit" title="Thoát 3D (Esc)"><i class="fa-solid fa-xmark"></i>Thoát 3D</button>
+      </div>
+    </header>
+
+    <div class="v3d-legend">
+      <b>LST (°C) · chiều cao khối tỉ lệ với nhiệt độ</b>
+      <div class="lg-bar" id="v3dLgBar"></div>
+      <div class="lg-ticks" id="v3dLgTicks"></div>
+    </div>
+
+    <div class="v3d-time">
+      <button class="icon-btn" id="v3dPrev" title="Tháng trước"><i class="fa-solid fa-backward-step"></i></button>
+      <button class="play sm" id="v3dPlay" title="Chạy theo thời gian"><i class="fa-solid fa-play"></i></button>
+      <button class="icon-btn" id="v3dNext" title="Tháng sau"><i class="fa-solid fa-forward-step"></i></button>
+      <span id="v3dMonth">–</span>
+    </div>
+
+    <div class="v3d-tip" id="v3dTip" hidden></div>
+
+    <aside class="v3d-card" id="v3dCard" hidden>
+      <button class="icon-btn v3d-close" id="v3dCardClose" title="Bỏ chọn"><i class="fa-solid fa-xmark"></i></button>
+      <div id="v3dCardBody"></div>
+    </aside>
+
+    <p class="v3d-hint">Nhấp vào một phường để xem cột nhiệt từng ô 480 m · kéo để xoay · cuộn để thu phóng · Esc để thoát<br /><small>Đặc khu Côn Đảo không có trong ảnh GEE nên không hiển thị.</small></p>
+    <div class="v3d-loading" id="v3dLoading"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang dựng mô hình 3D…</div>
+  </div>
+
+  <div id="toasts" aria-live="polite"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="vendor/three.min.js"></script>
+  <script src="vendor/OrbitControls.js"></script>
+  <script src="js/app.js?v=4"></script>
+  <script src="js/map3d.js?v=4"></script>
+</body>
+</html>

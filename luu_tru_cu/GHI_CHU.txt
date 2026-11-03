@@ -1,0 +1,3 @@
+Thư mục lưu trữ các file của phiên bản cũ (ranh giới 24 quận/huyện cũ, ảnh màu 2025,
+ward.js, các script đọc bảng public.chi_so_diem cũ). Web mới KHÔNG dùng các file này nữa.
+Có thể xoá cả thư mục khi không cần đối chiếu.
