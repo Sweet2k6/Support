@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đăng nhập · LST Forecast</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230f172a'/%3E%3Crect x='7' y='18' width='3.4' height='7' rx='1' fill='%2300c8ff'/%3E%3Crect x='12.2' y='14' width='3.4' height='11' rx='1' fill='%2322c55e'/%3E%3Crect x='17.4' y='10' width='3.4' height='15' rx='1' fill='%23facc15'/%3E%3Crect x='22.6' y='6' width='3.4' height='19' rx='1' fill='%23ef4444'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@500;600;700&display=swap&subset=vietnamese" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="stylesheet" href="css/style.css?v=4" />
+  <link rel="stylesheet" href="css/auth.css?v=1" />
+</head>
+<body class="auth-page">
+  <div class="heat-floor" id="heat" aria-hidden="true"></div>
+
+  <main class="card auth-card">
+    <div class="auth-brand">
+      <span class="rail-logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+      <div>
+        <h1>LST Forecast</h1>
+        <p>Nhiệt độ bề mặt đất TP. Hồ Chí Minh</p>
+      </div>
+    </div>
+
+    <h2 class="auth-title" id="formTitle">Đăng nhập để xem bản đồ</h2>
+    <div class="callout err" id="err" role="alert" hidden></div>
+
+    <form id="form" novalidate>
+      <label class="fld"><span>Tên đăng nhập</span>
+        <div class="ctl"><input id="u" autocomplete="username" autocapitalize="none" spellcheck="false" required /></div>
+      </label>
+      <label class="fld" id="nameRow" hidden><span>Họ tên</span>
+        <div class="ctl"><input id="name" autocomplete="name" /></div>
+      </label>
+      <label class="fld"><span>Mật khẩu</span>
+        <div class="ctl has-btn">
+          <input id="pw" type="password" autocomplete="current-password" required />
+          <button class="eye" id="eye" type="button" aria-label="Hiện mật khẩu"><i class="fa-solid fa-eye"></i></button>
+        </div>
+        <small id="pwHint" hidden>Ít nhất 6 ký tự.</small>
+      </label>
+      <label class="fld" id="pw2Row" hidden><span>Nhập lại mật khẩu</span>
+        <div class="ctl"><input id="pw2" type="password" autocomplete="new-password" /></div>
+      </label>
+      <div class="auth-row" id="rememberRow">
+        <label><input type="checkbox" id="remember" /> Giữ đăng nhập 30 ngày</label>
+      </div>
+      <button class="btn primary block" id="submit" type="submit"><i class="fa-solid fa-right-to-bracket"></i><span>Đăng nhập</span></button>
+    </form>
+
+    <p class="auth-foot" id="switchLine">Chưa có tài khoản? <button class="auth-link" id="switch" type="button">Đăng ký người dùng</button></p>
+    <div class="callout info" id="staticNote" hidden><i class="fa-solid fa-circle-info"></i>Bản demo tĩnh: tài khoản được lưu trong trình duyệt này, không dùng chung giữa các máy.</div>
+  </main>
+
+  <script src="js/auth.js?v=1"></script>
+  <script>
+    const $ = (s) => document.querySelector(s);
+    let mode = 'login';
+
+    // Dải sọc nhiệt chân trang: xanh → đỏ theo thang LST, độ cao gợn nhẹ
+    (function () {
+      const stops = ['#0000FF', '#0066FF', '#00FFFF', '#00FF00', '#FFFF00', '#FFCC00', '#FF6600', '#FF0000'];
+      const n = Math.min(72, Math.ceil(innerWidth / 14));
+      $('#heat').innerHTML = Array.from({ length: n }, (_, i) => {
+        const t = i / (n - 1), h = 34 + 70 * (0.5 + 0.5 * Math.sin(i * 0.55)) * (0.55 + 0.45 * t);
+        return `<i style="height:${h.toFixed(0)}px;background:${stops[Math.round(t * (stops.length - 1))]};animation-delay:${i * 14}ms"></i>`;
+      }).join('');
+    })();
+
+    if (Auth.STATIC) $('#staticNote').hidden = false;
+
+    const nextUrl = () => {
+      const n = new URLSearchParams(location.search).get('next') || 'index.html';
+      return /^[\w.\-]+(\?[^#]*)?$/.test(n) ? n : 'index.html';   // chỉ cho phép trang cùng thư mục
+    };
+    const showErr = (m) => { const e = $('#err'); e.textContent = ''; const i = document.createElement('i'); i.className = 'fa-solid fa-circle-exclamation'; e.append(i, m); e.hidden = false; };
+
+    function setMode(m) {
+      mode = m;
+      const reg = m === 'register';
+      $('#formTitle').textContent = reg ? 'Tạo tài khoản người dùng' : 'Đăng nhập để xem bản đồ';
+      $('#nameRow').hidden = $('#pw2Row').hidden = $('#pwHint').hidden = !reg;
+      $('#rememberRow').hidden = reg;
+      $('#pw').autocomplete = reg ? 'new-password' : 'current-password';
+      $('#submit').innerHTML = reg ? '<i class="fa-solid fa-user-plus"></i><span>Tạo tài khoản</span>' : '<i class="fa-solid fa-right-to-bracket"></i><span>Đăng nhập</span>';
+      $('#switchLine').firstChild.textContent = reg ? 'Đã có tài khoản? ' : 'Chưa có tài khoản? ';
+      $('#switch').textContent = reg ? 'Quay lại đăng nhập' : 'Đăng ký người dùng';
+      $('#err').hidden = true;
+    }
+    $('#switch').addEventListener('click', () => setMode(mode === 'login' ? 'register' : 'login'));
+    $('#eye').addEventListener('click', () => {
+      const p = $('#pw'), show = p.type === 'password';
+      p.type = show ? 'text' : 'password';
+      $('#eye i').className = show ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+      $('#eye').setAttribute('aria-label', show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
+    });
+
+    $('#form').addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      $('#err').hidden = true;
+      const u = $('#u').value, pw = $('#pw').value, btn = $('#submit');
+      if (!u.trim() || !pw) return showErr('Nhập tên đăng nhập và mật khẩu.');
+      btn.disabled = true;
+      try {
+        if (mode === 'register') {
+          if (pw !== $('#pw2').value) throw new Error('Hai mật khẩu chưa khớp.');
+          await Auth.register(u, $('#name').value, pw);
+        }
+        await Auth.login(u, pw, $('#remember').checked);
+        location.replace(nextUrl());
+      } catch (e) {
+        showErr(e.message);
+        btn.disabled = false;
+      }
+    });
+
+    // Đã đăng nhập sẵn thì vào thẳng bản đồ
+    Auth.me().then((me) => { if (me) location.replace(nextUrl()); }).catch(() => {});
+  </script>
+</body>
+</html>

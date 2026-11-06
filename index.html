@@ -37,7 +37,8 @@
       <button data-pane="weather" title="Thời tiết 7 ngày"><i class="fa-solid fa-cloud-sun"></i><span>7 ngày</span></button>
       <span class="rail-sp"></span>
       <button class="rail-3d" id="btn3d" title="Xem mô hình 3D"><i class="fa-solid fa-cube"></i><span>3D</span></button>
-      <a class="rail-admin" id="roleChip" href="#" hidden title="Trang quản trị"><i class="fa-solid fa-user-shield"></i><span>Quản trị</span></a>
+      <a class="rail-admin" id="roleChip" href="admin.html" hidden title="Trang quản trị"><i class="fa-solid fa-user-shield"></i><span>Quản trị</span></a>
+      <button class="rail-user" id="btnLogout" type="button" title="Đăng xuất"><i class="fa-solid fa-right-from-bracket"></i><span>Thoát</span></button>
       <div class="status" id="dbStatus" title="Trạng thái CSDL"><span class="dot"></span><span class="txt">CSDL</span></div>
     </nav>
 
@@ -256,6 +257,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="vendor/three.min.js"></script>
   <script src="vendor/OrbitControls.js"></script>
+  <script src="js/auth.js?v=1"></script>
   <script src="js/app.js?v=4"></script>
   <script src="js/map3d.js?v=4"></script>
 </body>

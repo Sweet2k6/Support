@@ -62,7 +62,6 @@
     if (p === '/series') return getJson(q.phien ? `series_LST_${q.phien}.json` : 'series_LST.json');
     if (p === '/stats') return getJson('stats_LST.json');
     if (p === '/compare') return getJson(`compare_${q.phien}.json`);
-    if (p === '/auth/role') return { role: 'user' };
     if (p.startsWith('/ward/')) return getJson(`ward/${decodeURIComponent(p.slice(6))}.json`);
     if (p === '/cells') {
       const c = await getJson(`cells/${q.ma_xa}.json`).catch(() => null);
@@ -105,6 +104,7 @@
     if (STATIC) return staticApi(path);
     const res = await fetch('/api' + path, opts);
     const body = await res.json().catch(() => ({}));
+    if (res.status === 401) { window.Auth.signOut(); throw new Error('Phiên đăng nhập đã hết hạn'); }
     if (!res.ok) throw new Error(body.error || `${res.status} ${res.statusText}`);
     return body;
   }
@@ -1034,7 +1034,7 @@
       ${imp ? `<div class="sec-h">Mức độ quan trọng của biến <span>${esc(cur.ten_mo_hinh)}</span></div>
       <div class="bars">${Object.entries(imp).slice(0, 8).map(([k, v], i, arr) => `<div class="b"><span title="${esc(k)}">${esc(FEAT[k] || k)}</span><i style="width:${v / arr[0][1] * 100}%"></i><b>${fmt(v * 100, 1)}%</b></div>`).join('')}</div>` : ''}
       <div class="sec-h">Tải kết quả GeoTIFF <span>${esc(cur.ten_mo_hinh)} · lưới 480 m · EPSG:32648</span></div>
-      <div class="dl">${cur.months.map((m) => `<a class="btn" href="${esc(m.tif)}" download title="${TAP_TEXT[m.tap] || ''}"><i class="fa-solid fa-file-arrow-down"></i>${esc(m.tif.split('/').pop())}</a>`).join('')}</div>
+      ${S.me && S.me.role !== 'admin' ? '<p class="note"><i class="fa-solid fa-lock"></i> Tải GeoTIFF dành cho quản trị viên.</p>' : `<div class="dl">${cur.months.map((m) => `<a class="btn" href="${esc(m.tif)}" download title="${TAP_TEXT[m.tap] || ''}"><i class="fa-solid fa-file-arrow-down"></i>${esc(m.tif.split('/').pop())}</a>`).join('')}</div>`}
       ${sims.map((s) => `<div class="callout sim" style="margin-top:14px"><b><i class="fa-solid fa-flask"></i> ${esc(s.ten)}</b><br>
         ${esc(s.tham_so?.kich_ban || '')} · ${(s.tham_so?.so_o_tac_dong || 0).toLocaleString('vi-VN')} ô chịu tác động ·
         thay đổi LST trung bình toàn TP <b>${signed(s.tham_so?.chenh_lech_tb_c, 2)} °C</b>. ${esc(s.mo_ta || '')}
@@ -1389,6 +1389,9 @@
 
   async function init() {
     const pill = $('#dbStatus');
+    const me = await window.Auth.require();            // chưa đăng nhập → chuyển sang login.html
+    if (!me) return;
+    S.me = me;
     try {
       splash(12, 'Đang kết nối PostgreSQL/PostGIS…');
       const h = await api('/health');
@@ -1437,12 +1440,11 @@
       await render();
       if (S.runId !== null) ensureRunSeries(S.runId).catch(() => {});   // tải trước để chuyển sang Dự báo tức thì
 
-      const token = new URLSearchParams(location.search).get('token');
-      if (token) {
-        api(`/auth/role?token=${encodeURIComponent(token)}`).then((r) => {
-          if (r.role === 'admin') { const c = $('#roleChip'); c.hidden = false; c.href = `/admin?token=${encodeURIComponent(token)}`; }
-        }).catch(() => {});
-      }
+      // Phân quyền giao diện: quản trị viên thấy lối vào trang quản trị; ai cũng có nút đăng xuất
+      if (me.role === 'admin') $('#roleChip').hidden = false;
+      $('#btnLogout').title = `Đăng xuất · ${me.name || me.username} (${window.Auth.ROLES[me.role]})`;
+      $('#btnLogout').addEventListener('click', () => window.Auth.signOut());
+      if (new URLSearchParams(location.search).has('denied')) { toast('Tài khoản của bạn không có quyền vào trang quản trị', 'err'); history.replaceState(null, '', location.pathname); }
       splash(100, 'Sẵn sàng');
       setTimeout(() => {
         $('#splash').classList.add('out');

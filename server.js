@@ -16,7 +16,6 @@ const { Pool } = require('pg');
 
 const S = 'vientham';
 const PORT = Number(process.env.PORT) || 3000;
-const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'admin2026';
 
 const pool = new Pool({
   host: process.env.PGHOST,
@@ -40,6 +39,10 @@ const r = (v, d = 3) => (v === null || v === undefined ? null : Math.round(Numbe
 const app = express();
 app.use(compression());
 app.use(express.json({ limit: '2mb' }));
+
+// Xác thực + phân quyền (đặt TRƯỚC express.static để chặn cả file dữ liệu). Xem server_auth.js
+const auth = require('./server_auth')(app, pool);
+
 app.use(express.static(path.join(__dirname, 'public'), {
   setHeaders(res, p) {
     if (p.endsWith('.tif')) res.setHeader('Content-Disposition', `attachment; filename="${path.basename(p)}"`);
@@ -355,14 +358,10 @@ app.get('/api/weather', wrap(async (req, res) => {
   }
 }));
 
-// ─── Phân quyền đơn giản bằng mã quản trị ────────────────────────────────
-const roleOf = (req) => ((req.query.token || req.headers['x-admin-token'] || '') === ADMIN_TOKEN ? 'admin' : 'user');
-const requireAdmin = (req, res, next) => (roleOf(req) === 'admin' ? next() : res.status(403).json({ error: 'Cần quyền quản trị' }));
-app.get('/api/auth/role', (req, res) => res.json({ role: roleOf(req) }));
-
+// ─── Quản trị (xác thực/phân quyền nằm trong server_auth.js) ───────────────
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
-app.get('/api/admin/summary', requireAdmin, wrap(async (req, res) => {
+app.get('/api/admin/summary', wrap(async (req, res) => {
   const tables = ['dm_chi_so', 'dm_loai_du_lieu', 'dm_mo_hinh', 'dm_nguong_canh_bao', 'ky_thoi_gian', 'ranh_gioi_tinh',
     'don_vi_hanh_chinh', 'luoi_o', 'phien_du_bao', 'phien_ky', 'quan_trac_o', 'du_bao_o', 'anh_raster',
     'thong_ke_phuong', 'danh_gia_mo_hinh', 'thoi_tiet_du_bao', 'nhat_ky_nap'];
@@ -385,7 +384,7 @@ app.get('/api/admin/summary', requireAdmin, wrap(async (req, res) => {
   });
 }));
 
-app.post('/api/admin/reload', requireAdmin, (req, res) => {
+app.post('/api/admin/reload', (req, res) => {
   cache.clear();
   res.json({ ok: true });
 });

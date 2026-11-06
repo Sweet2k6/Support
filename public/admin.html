@@ -4,22 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Quản trị · LST Forecast</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232563eb'/%3E%3Crect x='6' y='8' width='3' height='16' rx='1' fill='%2300ffff'/%3E%3Crect x='11' y='8' width='3' height='16' rx='1' fill='%2300ff00'/%3E%3Crect x='16' y='8' width='3' height='16' rx='1' fill='%23ffcc00'/%3E%3Crect x='21' y='8' width='3' height='16' rx='1' fill='%23ff3300'/%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230f172a'/%3E%3Crect x='7' y='18' width='3.4' height='7' rx='1' fill='%2300c8ff'/%3E%3Crect x='12.2' y='14' width='3.4' height='11' rx='1' fill='%2322c55e'/%3E%3Crect x='17.4' y='10' width='3.4' height='15' rx='1' fill='%23facc15'/%3E%3Crect x='22.6' y='6' width='3.4' height='19' rx='1' fill='%23ef4444'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@500;600;700&display=swap&subset=vietnamese" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="css/style.css?v=4" />
+  <link rel="stylesheet" href="css/auth.css?v=1" />
   <style>
     body { overflow: auto; display: block; }
     .wrap { max-width: 1180px; margin: 0 auto; padding: 22px 18px 40px; }
     .ad-head { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
-    .ad-head h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.3px; }
+    .ad-head h1 { margin: 0; font-family: var(--font-d); font-size: 22px; font-weight: 600; letter-spacing: -.3px; }
     .ad-head p { margin: 2px 0 0; color: var(--muted); }
     .ad-head .sp { flex: 1; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .grid .full { grid-column: 1 / -1; }
     .box { padding: 16px; }
-    .box h2 { margin: 0 0 4px; font-size: 15px; display: flex; gap: 8px; align-items: center; }
+    .box h2 { margin: 0 0 4px; font-family: var(--font-d); font-size: 15px; font-weight: 600; display: flex; gap: 8px; align-items: center; }
     .box h2 i { color: var(--accent); }
     .box > p { margin: 0 0 12px; color: var(--muted); font-size: 12px; }
     .tbl td.l, .tbl th.l { text-align: left; }
@@ -27,70 +28,186 @@
     .tag.gee { background: #f0fdfa; color: #0f766e; }
     .tag.fc { background: #eef2ff; color: #4338ca; }
     pre.log { background: #0f172a; color: #e2e8f0; padding: 10px 12px; border-radius: 10px; font-size: 11px; max-height: 260px; overflow: auto; white-space: pre-wrap; margin: 0; }
-    .denied { max-width: 460px; margin: 12vh auto; text-align: center; padding: 28px; }
     .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
     .stat { padding: 12px 14px; }
     .stat .k { font-size: 11.5px; color: var(--muted); }
-    .stat .v { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
-    @media (max-width: 860px) { .grid, .stat-row { grid-template-columns: 1fr; } }
+    .stat .v { font-size: 22px; font-weight: 700; font-family: var(--font-d); font-variant-numeric: tabular-nums; }
+    .sec-nav { margin-bottom: 14px; }
+    @media (max-width: 860px) { .grid, .stat-row { grid-template-columns: 1fr 1fr; } }
   </style>
 </head>
 <body>
-  <div class="wrap" id="app">
+  <div class="wrap" id="app" hidden>
     <div class="ad-head">
-      <a class="btn" href="/" id="back"><i class="fa-solid fa-arrow-left"></i>Về bản đồ</a>
+      <a class="btn" href="index.html"><i class="fa-solid fa-arrow-left"></i>Về bản đồ</a>
       <div>
-        <h1>Quản trị dữ liệu</h1>
-        <p>CSDL PostgreSQL/PostGIS · schema <code>vientham</code></p>
+        <h1>Quản trị hệ thống</h1>
+        <p id="subtitle">Tài khoản, phân quyền và cơ sở dữ liệu</p>
       </div>
       <span class="sp"></span>
-      <button class="btn primary" id="reload"><i class="fa-solid fa-rotate"></i>Làm mới bộ nhớ đệm</button>
+      <div class="who"><div><b id="whoName">–</b> <span class="role admin" id="whoRole">Quản trị viên</span></div>
+        <button class="icon-btn ghost" id="logout" title="Đăng xuất" aria-label="Đăng xuất"><i class="fa-solid fa-right-from-bracket"></i></button></div>
     </div>
-    <div class="stat-row" id="stats"></div>
-    <div class="grid">
-      <section class="card box full">
-        <h2><i class="fa-solid fa-brain"></i>Đánh giá mô hình dự báo LST</h2>
-        <p>Chỉ tiêu tính trên từng ô 480 m. Hàng in đậm là phiên hiển thị mặc định.</p>
-        <div style="overflow-x:auto"><table class="tbl" id="metrics"></table></div>
-      </section>
-      <section class="card box">
-        <h2><i class="fa-solid fa-database"></i>Bảng dữ liệu</h2>
-        <p>Số dòng thực tế và dung lượng (gồm chỉ mục).</p>
-        <table class="tbl" id="tables"></table>
-      </section>
-      <section class="card box">
-        <h2><i class="fa-solid fa-eye"></i>View phục vụ thống kê</h2>
-        <p>Các truy vấn phân tích dựng sẵn trong CSDL.</p>
-        <table class="tbl" id="views"></table>
-        <h2 style="margin-top:16px"><i class="fa-solid fa-clock-rotate-left"></i>Nhật ký nạp dữ liệu</h2>
-        <p>Bảng <code>nhat_ky_nap</code>.</p>
-        <pre class="log" id="log">–</pre>
-      </section>
+
+    <div class="seg sec-nav" id="nav" role="tablist">
+      <button class="on" data-sec="acc" role="tab"><i class="fa-solid fa-users-gear"></i>Tài khoản</button>
+      <button data-sec="db" role="tab" id="navDb"><i class="fa-solid fa-database"></i>Cơ sở dữ liệu</button>
     </div>
+
+    <!-- ===== Tài khoản & phân quyền ===== -->
+    <section id="sec-acc">
+      <div class="stat-row" id="accStats"></div>
+      <div class="callout info" id="roleNote" style="margin:0 0 14px"><b>Phân quyền.</b> Quản trị viên: xem bản đồ, mở trang quản trị, thêm/khoá/xoá tài khoản, đổi vai trò và mật khẩu. Người dùng: chỉ xem bản đồ, xếp hạng, thống kê và tải CSV.</div>
+      <div class="callout warn" id="staticNote" style="margin:0 0 14px" hidden><b>Bản demo tĩnh.</b> Tài khoản lưu trong trình duyệt này nên chỉ có tác dụng trên máy này và không phải bảo mật thật. Phân quyền thật chạy ở chế độ máy chủ (<code>npm start</code>).</div>
+
+      <div class="card box" style="margin-bottom:14px">
+        <h2><i class="fa-solid fa-user-plus"></i>Thêm tài khoản</h2>
+        <p>Mật khẩu ít nhất 6 ký tự. Tên đăng nhập gồm chữ thường, số và dấu . _ -</p>
+        <form class="add-grid" id="addForm" novalidate>
+          <label class="fld"><span>Tên đăng nhập</span><div class="ctl"><input id="nu" autocomplete="off" spellcheck="false" /></div></label>
+          <label class="fld"><span>Họ tên</span><div class="ctl"><input id="nn" autocomplete="off" /></div></label>
+          <label class="fld"><span>Mật khẩu</span><div class="ctl"><input id="np" type="password" autocomplete="new-password" /></div></label>
+          <label class="fld"><span>Vai trò</span><select id="nr"><option value="user">Người dùng</option><option value="admin">Quản trị viên</option></select></label>
+          <button class="btn primary" type="submit"><i class="fa-solid fa-plus"></i>Thêm</button>
+        </form>
+      </div>
+
+      <div class="card box">
+        <h2><i class="fa-solid fa-users"></i>Danh sách tài khoản</h2>
+        <p>Đổi vai trò ngay trong bảng. Tài khoản bị khoá không đăng nhập được.</p>
+        <div style="overflow-x:auto"><table class="tbl" id="accTable"></table></div>
+      </div>
+    </section>
+
+    <!-- ===== Cơ sở dữ liệu (chỉ chế độ máy chủ) ===== -->
+    <section id="sec-db" hidden>
+      <div class="ad-head" style="margin-bottom:12px"><span class="sp"></span><button class="btn primary" id="reload"><i class="fa-solid fa-rotate"></i>Làm mới bộ nhớ đệm</button></div>
+      <div class="stat-row" id="stats"></div>
+      <div class="grid">
+        <section class="card box full">
+          <h2><i class="fa-solid fa-brain"></i>Đánh giá mô hình dự báo LST</h2>
+          <p>Chỉ tiêu tính trên từng ô 480 m. Hàng in đậm là phiên hiển thị mặc định.</p>
+          <div style="overflow-x:auto"><table class="tbl" id="metrics"></table></div>
+        </section>
+        <section class="card box">
+          <h2><i class="fa-solid fa-table"></i>Bảng dữ liệu</h2>
+          <p>Số dòng thực tế và dung lượng (gồm chỉ mục).</p>
+          <table class="tbl" id="tables"></table>
+        </section>
+        <section class="card box">
+          <h2><i class="fa-solid fa-eye"></i>View phục vụ thống kê</h2>
+          <p>Các truy vấn phân tích dựng sẵn trong CSDL.</p>
+          <table class="tbl" id="views"></table>
+          <h2 style="margin-top:16px"><i class="fa-solid fa-clock-rotate-left"></i>Nhật ký nạp dữ liệu</h2>
+          <p>Bảng <code>nhat_ky_nap</code>.</p>
+          <pre class="log" id="log">–</pre>
+        </section>
+      </div>
+    </section>
   </div>
+
+  <dialog class="dlg" id="dlg"><form method="dialog" id="dlgForm">
+    <h3 id="dlgTitle"></h3><p id="dlgText"></p>
+    <label class="fld" id="dlgField" hidden><span>Mật khẩu mới</span><div class="ctl"><input id="dlgInput" type="password" autocomplete="new-password" /></div></label>
+    <div class="acts"><button class="btn" value="cancel" type="submit">Huỷ</button><button class="btn primary" id="dlgOk" value="ok" type="submit">Đồng ý</button></div>
+  </form></dialog>
+  <div id="toasts" aria-live="polite"></div>
+
+  <script src="js/auth.js?v=1"></script>
   <script>
-    const token = new URLSearchParams(location.search).get('token') || '';
     const $ = (s) => document.querySelector(s);
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const fmt = (v, d = 2) => (v === null || v === undefined || !isFinite(v) ? '–' : (+v).toLocaleString('vi-VN', { minimumFractionDigits: d, maximumFractionDigits: d }));
     const size = (b) => (b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : (b / 1024).toFixed(0) + ' kB');
+    const when = (t) => (t ? new Date(t).toLocaleString('vi-VN') : '–');
+    function toast(msg, type = 'info') {
+      const icon = { ok: 'fa-circle-check', err: 'fa-circle-exclamation', info: 'fa-circle-info' }[type];
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.innerHTML = `<i class="fa-solid ${icon}"></i><span>${esc(msg)}</span>`;
+      $('#toasts').appendChild(el);
+      setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 320); }, 3600);
+    }
+
+    // Hộp thoại dùng chung: xác nhận hoặc nhập mật khẩu mới. Trả về true / chuỗi / null.
+    function ask({ title, text, field, ok = 'Đồng ý', danger = false }) {
+      return new Promise((resolve) => {
+        const d = $('#dlg'), inp = $('#dlgInput');
+        $('#dlgTitle').textContent = title; $('#dlgText').textContent = text;
+        $('#dlgField').hidden = !field; inp.value = '';
+        const b = $('#dlgOk'); b.textContent = ok; b.className = 'btn ' + (danger ? 'danger' : 'primary');
+        d.onclose = () => resolve(d.returnValue === 'ok' ? (field ? inp.value : true) : null);
+        d.returnValue = 'cancel'; d.showModal(); if (field) inp.focus();
+      });
+    }
+
+    let ME = null, USERS = [];
+    function renderAccounts() {
+      const admins = USERS.filter((x) => x.role === 'admin').length, locked = USERS.filter((x) => x.locked).length;
+      $('#accStats').innerHTML = [['Tổng tài khoản', USERS.length], ['Quản trị viên', admins], ['Người dùng', USERS.length - admins], ['Đang bị khoá', locked]]
+        .map(([k, v]) => `<div class="card stat"><div class="k">${k}</div><div class="v">${v}</div></div>`).join('');
+      $('#accTable').innerHTML = `<thead><tr><th class="l">Tài khoản</th><th class="l">Họ tên</th><th class="l">Vai trò</th><th class="l">Trạng thái</th><th class="l">Tạo lúc</th><th class="l">Đăng nhập gần nhất</th><th></th></tr></thead><tbody>${USERS.map((x) => {
+        const self = x.username === ME.username;
+        return `<tr data-id="${esc(x.id)}"><td class="l"><b>${esc(x.username)}</b>${self ? ' <span class="tag">bạn</span>' : ''}</td><td class="l">${esc(x.name)}</td>
+          <td class="l"><select class="sel sm" data-act="role" ${self ? 'disabled title="Không thể tự đổi vai trò"' : ''}>
+            <option value="user" ${x.role === 'user' ? 'selected' : ''}>Người dùng</option><option value="admin" ${x.role === 'admin' ? 'selected' : ''}>Quản trị viên</option></select></td>
+          <td class="l">${x.locked ? '<span class="role locked">Đã khoá</span>' : '<span class="role user">Hoạt động</span>'}</td>
+          <td class="l">${when(x.created)}</td><td class="l">${when(x.last)}</td>
+          <td><div class="acc-tools">
+            <button class="mini-btn" data-act="pw"><i class="fa-solid fa-key"></i>Mật khẩu</button>
+            <button class="mini-btn" data-act="lock" ${self ? 'disabled' : ''}><i class="fa-solid ${x.locked ? 'fa-lock-open' : 'fa-lock'}"></i>${x.locked ? 'Mở khoá' : 'Khoá'}</button>
+            <button class="mini-btn danger" data-act="del" ${self ? 'disabled' : ''}><i class="fa-solid fa-trash"></i>Xoá</button></div></td></tr>`;
+      }).join('')}</tbody>`;
+    }
+    async function refreshUsers() { USERS = await Auth.list(); renderAccounts(); }
+    async function run(fn, okMsg) {
+      try { await fn(); if (okMsg) toast(okMsg, 'ok'); await refreshUsers(); } catch (e) { toast(e.message, 'err'); await refreshUsers().catch(() => {}); }
+    }
+
+    $('#accTable').addEventListener('click', async (ev) => {
+      const btn = ev.target.closest('[data-act]'); if (!btn || btn.tagName === 'SELECT') return;
+      const id = btn.closest('tr').dataset.id, u = USERS.find((x) => x.id === id);
+      if (btn.dataset.act === 'pw') {
+        const pw = await ask({ title: 'Đặt lại mật khẩu', text: `Tài khoản ${u.username}. Mật khẩu ít nhất 6 ký tự.`, field: true, ok: 'Lưu mật khẩu' });
+        if (pw !== null) run(() => Auth.update(id, { pw }), 'Đã đổi mật khẩu');
+      } else if (btn.dataset.act === 'lock') {
+        run(() => Auth.update(id, { locked: !u.locked }), u.locked ? 'Đã mở khoá tài khoản' : 'Đã khoá tài khoản');
+      } else if (btn.dataset.act === 'del') {
+        if (await ask({ title: 'Xoá tài khoản?', text: `Tài khoản ${u.username} sẽ bị xoá vĩnh viễn.`, ok: 'Xoá', danger: true })) run(() => Auth.remove(id), 'Đã xoá tài khoản');
+      }
+    });
+    $('#accTable').addEventListener('change', (ev) => {
+      const sel = ev.target.closest('select[data-act="role"]'); if (!sel) return;
+      run(() => Auth.update(sel.closest('tr').dataset.id, { role: sel.value }), 'Đã đổi vai trò');
+    });
+    $('#addForm').addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      run(async () => {
+        await Auth.add({ u: $('#nu').value, name: $('#nn').value, pw: $('#np').value, role: $('#nr').value });
+        $('#addForm').reset();
+      }, 'Đã thêm tài khoản');
+    });
+    $('#logout').addEventListener('click', () => Auth.signOut());
+
+    $('#nav').addEventListener('click', (ev) => {
+      const b = ev.target.closest('button[data-sec]'); if (!b) return;
+      $('#nav').querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
+      $('#sec-acc').hidden = b.dataset.sec !== 'acc'; $('#sec-db').hidden = b.dataset.sec !== 'db';
+      if (b.dataset.sec === 'db' && !dbLoaded) { dbLoaded = true; load().catch((e) => { $('#sec-db').insertAdjacentHTML('afterbegin', `<div class="callout warn">${esc(e.message)}</div>`); }); }
+    });
+
+    // ── Cơ sở dữ liệu (chỉ khi chạy bằng máy chủ) ──
+    let dbLoaded = false;
     const VIEW_DESC = {
       v_gia_tri_o: 'Hợp nhất hiện trạng + dự báo theo ô', v_thong_ke_thanh_pho_thang: 'TB toàn TP theo tháng', v_thong_ke_phuong_nam: 'TB năm theo phường',
       v_thong_ke_phuong_mua: 'Mùa khô / mùa mưa theo phường', v_xu_huong_phuong: 'Độ dốc xu hướng (regr_slope)', v_thong_ke_khu_vuc: 'Theo 3 khu vực cũ',
       v_so_sanh_du_bao: 'Dự báo đối chiếu GEE từng ô', v_canh_bao_phuong: 'Phân cấp cảnh báo theo ngưỡng', v_xep_hang_mo_hinh: 'Xếp hạng mô hình theo RMSE',
     };
-    $('#back').href = '/?token=' + encodeURIComponent(token);
-
     async function load() {
-      const r = await fetch('/api/admin/summary', { headers: { 'x-admin-token': token } });
-      if (r.status === 403) {
-        document.getElementById('app').innerHTML = `<div class="card denied"><div class="empty"><div class="ic"><i class="fa-solid fa-lock"></i></div>
-          <h3>Cần mã quản trị</h3><p>Mở trang theo dạng <code>/admin?token=MÃ_QUẢN_TRỊ</code> (biến ADMIN_TOKEN trong file .env).</p>
-          <a class="btn" href="/"><i class="fa-solid fa-arrow-left"></i>Về bản đồ</a></div></div>`;
-        return;
-      }
+      const r = await fetch('api/admin/summary');
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'Không tải được thống kê CSDL');
       const d = await r.json();
-      const meta = await (await fetch('/api/meta')).json();
+      const meta = await (await fetch('api/meta')).json();
       const n = (t) => d.bang.find((x) => x.bang === t)?.so_dong ?? 0;
       $('#stats').innerHTML = [
         ['Phường/xã', n('don_vi_hanh_chinh')], ['Ô lưới 480 m', n('luoi_o')],
@@ -110,12 +227,20 @@
       }).join('')}</tbody>`;
     }
     $('#reload').addEventListener('click', async () => {
-      const r = await fetch('/api/admin/reload', { method: 'POST', headers: { 'x-admin-token': token } });
+      const r = await fetch('api/admin/reload', { method: 'POST' });
       $('#reload').innerHTML = r.ok ? '<i class="fa-solid fa-check"></i>Đã làm mới' : 'Lỗi';
       setTimeout(() => { $('#reload').innerHTML = '<i class="fa-solid fa-rotate"></i>Làm mới bộ nhớ đệm'; }, 2000);
-      load();
+      load().catch(() => {});
     });
-    load().catch((e) => { document.getElementById('app').insertAdjacentHTML('afterbegin', `<div class="callout warn">${esc(e.message)}</div>`); });
+
+    (async () => {
+      ME = await Auth.require('admin');       // chưa đăng nhập → login.html; không phải admin → về bản đồ
+      if (!ME) return;
+      $('#whoName').textContent = ME.name || ME.username;
+      if (Auth.STATIC) { $('#navDb').hidden = true; $('#staticNote').hidden = false; $('#roleNote').style.display = 'none'; }
+      $('#app').hidden = false;
+      refreshUsers().catch((e) => toast(e.message, 'err'));
+    })();
   </script>
 </body>
 </html>
