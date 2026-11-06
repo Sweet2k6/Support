@@ -132,11 +132,14 @@ module.exports = function setupAuth(app, pool) {
   // ── Cổng chặn dữ liệu: đặt TRƯỚC express.static ──
   app.use((req, res, next) => {
     const p = req.path;
+    // database/xuat_ban_tinh.js đặt LST_EXPORT=1 để máy chủ tạm (cổng 3999) cho phép chính máy đó gọi API khi xuất bản tĩnh.
+    // Biến này không bao giờ được đặt khi chạy web thật.
+    if (process.env.LST_EXPORT === '1' && ['::1', '127.0.0.1', '::ffff:127.0.0.1'].includes(req.ip)) return next();
     if (p === '/admin' || p === '/admin.html') {
       return req.user && req.user.role === 'admin' ? next() : res.redirect(req.user ? '/index.html?denied=1' : '/login.html?next=admin.html');
     }
     if (p.startsWith('/api/auth/')) return next();
-    if (p.startsWith('/api/admin/')) return requireAdmin(req, res, next);
+    if (p.startsWith('/api/admin/') || p.startsWith('/api/compare')) return requireAdmin(req, res, next);   // /api/compare: sai số mô hình, chỉ quản trị
     if (p.startsWith('/api/')) return requireLogin(req, res, next);
     if (p.startsWith('/data/du_bao/')) return requireAdmin(req, res, next);    // GeoTIFF dự báo: chỉ quản trị
     if (p.startsWith('/data/')) return requireLogin(req, res, next);

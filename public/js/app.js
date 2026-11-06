@@ -570,7 +570,7 @@
     renderThreshold();
     renderRank();
     markStripes();
-    $('#cmpSeg').hidden = !(S.mode === 'run' && hasObs(S.ky) && run()?.ma_loai === 'MO_HINH');
+    $('#cmpSeg').hidden = S.simple || !(S.mode === 'run' && hasObs(S.ky) && run()?.ma_loai === 'MO_HINH');
     if (!opts.fromPlay && S.tab === 'stats') renderStatsTab();
     if (S.selected !== null) updateWardLive();
     bus.emit('frame', { ky: S.ky, V: S.V, err: errMode() });
@@ -580,6 +580,7 @@
     if (S.mode === 'gee') return '<span class="chip gee dot">Hiện trạng · GEE</span>';
     const r = run();
     if (!r) return '';
+    if (S.simple) return '<span class="chip run dot">Dự báo</span>';
     const it = runItem(S.ky);
     const tap = it?.tap ? ` · ${TAP_TEXT[it.tap]}` : '';
     if (r.ma_loai === 'GIA_LAP') return `<span class="chip sim dot">Giả lập · ${esc(r.ten_mo_hinh)}</span>`;
@@ -592,7 +593,7 @@
     else if (r) {
       const it = runItem(S.ky);
       const what = S.cmp === 'obs' && hasObs(S.ky) ? 'ảnh GEE thực tế để đối chiếu' : S.cmp === 'err' && hasObs(S.ky) ? 'sai số dự báo so với GEE' : (r.ma_loai === 'GIA_LAP' ? `kịch bản giả lập (${esc(r.ten_mo_hinh)})` : `dự báo ${esc(r.ten_mo_hinh)}`);
-      p += ` · ${what}${it?.tap ? ` · tập ${TAP_TEXT[it.tap]}` : ''}`;
+      p += ` · ${what}${!S.simple && it?.tap ? ` · tập ${TAP_TEXT[it.tap]}` : ''}`;
     }
     const el = $('#mapTitleP');
     el.innerHTML = p;
@@ -1198,6 +1199,7 @@
   // ───────────────────────── Thanh điều hướng dọc & ngăn kéo ─────────────────────────
   const PANE_TITLE = { overview: 'Cảnh báo & xếp hạng', ward: 'Phường/xã', model: 'Mô hình dự báo', stats: 'Thống kê', weather: 'Thời tiết 7 ngày' };
   function showTab(name) {
+    if (S.simple && name === 'model') name = 'overview';
     S.tab = name;
     $$('#rail button[data-pane]').forEach((b) => b.classList.toggle('on', b.dataset.pane === name));
     $$('#drawer .pane').forEach((p) => { p.hidden = p.id !== 'tab-' + name; });
@@ -1246,6 +1248,7 @@
     bus.emit('mode', mode);
   }
   async function chooseRun(id) {
+    if (S.simple) return;
     const r = S.meta.runs.find((x) => x.ma_phien === id);
     if (!r) return;
     const keep = S.ky;
@@ -1392,6 +1395,8 @@
     const me = await window.Auth.require();            // chưa đăng nhập → chuyển sang login.html
     if (!me) return;
     S.me = me;
+    S.simple = me.role !== 'admin';                     // người dùng thường: giao diện rút gọn, ẩn phần kỹ thuật/quản trị
+    document.body.classList.add('role-' + me.role);
     try {
       splash(12, 'Đang kết nối PostgreSQL/PostGIS…');
       const h = await api('/health');

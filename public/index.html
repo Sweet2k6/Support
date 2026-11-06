@@ -12,6 +12,10 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="css/style.css?v=4" />
+  <style>
+    /* Phần chỉ dành cho quản trị viên: người dùng thường không thấy (body nhận class role-admin / role-user khi đăng nhập) */
+    body:not(.role-admin) .admin-only { display: none !important; }
+  </style>
 </head>
 <body class="booting">
 
@@ -32,14 +36,14 @@
       <a class="rail-logo" href="./" title="LST Forecast · TP.HCM"><i></i><i></i><i></i><i></i></a>
       <button data-pane="overview" class="on" title="Cảnh báo & xếp hạng phường/xã"><i class="fa-solid fa-ranking-star"></i><span>Xếp hạng</span></button>
       <button data-pane="ward" title="Chi tiết phường/xã đang chọn"><i class="fa-solid fa-location-dot"></i><span>Phường</span></button>
-      <button data-pane="model" title="So sánh mô hình dự báo"><i class="fa-solid fa-brain"></i><span>Mô hình</span></button>
+      <button data-pane="model" class="admin-only" title="So sánh mô hình dự báo"><i class="fa-solid fa-brain"></i><span>Mô hình</span></button>
       <button data-pane="stats" title="Thống kê toàn thành phố"><i class="fa-solid fa-chart-column"></i><span>Thống kê</span></button>
       <button data-pane="weather" title="Thời tiết 7 ngày"><i class="fa-solid fa-cloud-sun"></i><span>7 ngày</span></button>
       <span class="rail-sp"></span>
       <button class="rail-3d" id="btn3d" title="Xem mô hình 3D"><i class="fa-solid fa-cube"></i><span>3D</span></button>
       <a class="rail-admin" id="roleChip" href="admin.html" hidden title="Trang quản trị"><i class="fa-solid fa-user-shield"></i><span>Quản trị</span></a>
       <button class="rail-user" id="btnLogout" type="button" title="Đăng xuất"><i class="fa-solid fa-right-from-bracket"></i><span>Thoát</span></button>
-      <div class="status" id="dbStatus" title="Trạng thái CSDL"><span class="dot"></span><span class="txt">CSDL</span></div>
+      <div class="status admin-only" id="dbStatus" title="Trạng thái CSDL"><span class="dot"></span><span class="txt">CSDL</span></div>
     </nav>
 
     <!-- ============ NGĂN KÉO NỘI DUNG ============ -->
@@ -105,11 +109,11 @@
             <button data-mode="gee" class="on" role="tab"><i class="fa-solid fa-satellite"></i><span>Hiện trạng GEE</span></button>
             <button data-mode="run" role="tab"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Dự báo</span></button>
           </div>
-          <label class="run-pick" id="runPick" hidden>
+          <label class="run-pick admin-only" id="runPick" hidden>
             <span class="sr-only">Mô hình dự báo</span>
             <select class="sel" id="runSel" title="Chọn mô hình hoặc kịch bản"></select>
           </label>
-          <div class="cmp-seg seg sm" id="cmpSeg" hidden>
+          <div class="cmp-seg seg sm admin-only" id="cmpSeg" hidden>
             <button data-cmp="pred" class="on">Dự báo</button>
             <button data-cmp="obs">Thực tế GEE</button>
             <button data-cmp="err">Sai số</button>
