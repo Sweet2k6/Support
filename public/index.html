@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0f172a" />
   <title>LST Forecast · Nhiệt độ bề mặt TP.HCM</title>
   <meta name="description" content="WebGIS giám sát và dự báo nhiệt độ bề mặt đất (LST) cho 168 phường/xã TP.HCM — dữ liệu Google Earth Engine 2017–2026, dự báo AI 12 tháng và 7 ngày, PostgreSQL/PostGIS." />
@@ -13,7 +13,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@500;600;700&display=swap&subset=vietnamese" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="css/style.css?v=7" />
+  <link rel="stylesheet" href="css/style.css?v=8" />
   <style>
     /* Phần chỉ dành cho quản trị viên: người dùng thường không thấy (body nhận class role-admin / role-user khi đăng nhập) */
     body:not(.role-admin) .admin-only { display: none !important; }
@@ -38,9 +38,8 @@
       <a class="rail-logo" href="./" title="LST Forecast · TP.HCM"><i></i><i></i><i></i><i></i></a>
       <button data-pane="overview" class="on" title="Cảnh báo & xếp hạng phường/xã"><i class="fa-solid fa-ranking-star"></i><span>Xếp hạng</span></button>
       <button data-pane="ward" title="Chi tiết phường/xã đang chọn"><i class="fa-solid fa-location-dot"></i><span>Phường</span></button>
-      <button data-pane="model" class="admin-only" title="So sánh mô hình dự báo"><i class="fa-solid fa-brain"></i><span>Mô hình</span></button>
       <button data-pane="stats" title="Thống kê toàn thành phố"><i class="fa-solid fa-chart-column"></i><span>Thống kê</span></button>
-      <button data-pane="weather" title="Dự báo 12 tháng · 7 ngày · các chế độ dự báo"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Dự báo</span></button>
+      <button data-pane="weather" title="Dự báo 12 tháng · 7 ngày · độ chính xác các mô hình"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Dự báo</span></button>
       <span class="rail-sp"></span>
       <button class="rail-3d" id="btn3d" title="Xem mô hình 3D"><i class="fa-solid fa-cube"></i><span>3D</span></button>
       <button id="btnSettings" type="button" title="Cài đặt: giao diện sáng/tối, thang màu"><i class="fa-solid fa-gear"></i><span>Cài đặt</span></button>
@@ -97,7 +96,6 @@
         </section>
       </div>
       <div class="pane scroll" id="tab-ward" hidden></div>
-      <div class="pane scroll" id="tab-model" hidden></div>
       <div class="pane scroll" id="tab-stats" hidden></div>
       <div class="pane scroll" id="tab-weather" hidden></div>
     </aside>
@@ -271,11 +269,12 @@
     <div class="v3d-tip" id="v3dTip" hidden></div>
 
     <aside class="v3d-card" id="v3dCard" hidden>
+      <button class="v3d-grip" id="v3dGrip" type="button" aria-label="Mở rộng / thu gọn thẻ" aria-controls="v3dCard"><i></i></button>
       <button class="icon-btn v3d-close" id="v3dCardClose" title="Bỏ chọn tất cả"><i class="fa-solid fa-xmark"></i></button>
       <div id="v3dCardBody"></div>
     </aside>
 
-    <p class="v3d-hint">Nhấp phường để <b>nâng lên</b> · nhấp thêm phường để <b>so sánh</b> · kéo để xoay · cuộn để thu phóng · Esc để thoát <small>· Côn Đảo không có ảnh GEE</small></p>
+    <p class="v3d-hint"><span class="h-desk">Nhấp phường để <b>nâng lên</b> · nhấp thêm phường để <b>so sánh</b> · kéo để xoay · cuộn để thu phóng · Esc để thoát <small>· Côn Đảo không có ảnh GEE</small></span><span class="h-touch"><i class="fa-regular fa-hand-pointer"></i> <b>1 ngón</b> xoay · <b>2 ngón</b> thu phóng · <b>chạm</b> chọn phường</span></p>
     <div class="v3d-loading" id="v3dLoading"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang dựng mô hình 3D…</div>
   </div>
 
@@ -284,9 +283,9 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="vendor/three.min.js"></script>
-  <script src="vendor/OrbitControls.js"></script>
+  <script src="vendor/OrbitControls.js?v=2"></script>
   <script src="js/auth.js?v=2"></script>
-  <script src="js/app.js?v=6"></script>
-  <script src="js/map3d.js?v=6"></script>
+  <script src="js/app.js?v=7"></script>
+  <script src="js/map3d.js?v=7"></script>
 </body>
 </html>

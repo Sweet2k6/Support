@@ -1,17 +1,17 @@
 /* =====================================================================
-   Nền trang đăng nhập — bản đồ LST TP.HCM mờ tự chạy qua các tháng có ảnh GEE.
-   · Bản đồ: 168 phường tô màu theo LST trung bình; mỗi lần sang tháng mới, màu đổi
-     lần lượt từ tây sang đông như một lượt quét vệ tinh (vạch quét sáng mảnh).
-   · Điểm nóng: 3 phường nóng nhất tháng có vòng sáng và nhãn nhiệt độ.
+   Bản đồ trang đăng nhập — LST TP.HCM rõ nét tự chạy qua các tháng có ảnh vệ tinh.
+   · Bản đồ: 168 phường tô màu theo LST trung bình, nổi trên nền lưới kinh/vĩ độ có bóng đổ;
+     mỗi lần sang tháng mới, màu đổi lần lượt từ tây sang đông như một lượt quét vệ tinh.
+   · Điểm nóng: 3 phường nóng nhất tháng có vòng sáng và nhãn nhiệt độ (máy tính).
    · Bảng "đang phát": tháng, LST trung bình / cao nhất / thấp nhất, thanh tiến trình 2017–2026.
-   · Chân trang: mỗi cột là một phường (xếp từ tây sang đông như bản đồ phía trên),
-     cao theo LST, có số °C mờ phía trên, dao động nhẹ như số đo trực tiếp.
-   Dữ liệu: login-bg.json (tạo bởi database/tao_nen_dang_nhap.js) — chỉ số tổng hợp, không tên phường.
+   · Chân bản đồ: mỗi cột là một phường (xếp tây → đông như bản đồ), cao theo LST, có số °C mờ.
+   Vẽ trong khung #stage (không phải cả cửa sổ) nên trên điện thoại bản đồ nằm gọn phía trên
+   tấm đăng nhập. Dữ liệu: login-bg.json (database/tao_nen_dang_nhap.js) — chỉ số tổng hợp, không tên phường.
    ===================================================================== */
 (function () {
   'use strict';
   const $ = (s) => document.querySelector(s);
-  const LO = 27, HI = 45;                                  // thang màu/chiều cao cột (°C)
+  const LO = 27, HI = 45;                                  // thang chiều cao cột (°C)
   const HOLD = 2800, SWEEP = 1100, DUR = 800;              // ms: mỗi tháng · thời gian quét · thời gian đổi màu 1 phường
   const reduce = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches || (window.LSTSettings && LSTSettings.get().motion === false);
   const dark = () => document.documentElement.dataset.theme === 'dark';
@@ -27,29 +27,42 @@
   const fmt1 = (v) => (Number.isFinite(v) ? v.toFixed(1).replace('.', ',') : '–');
   const kyText = (k) => `Tháng ${k % 100}/${Math.floor(k / 100)}`;
 
+  const stage = $('#stage');
   const mapCv = $('#bgMap'), fxCv = $('#bgFx'), eqCv = $('#eq');
   const mx = mapCv.getContext('2d'), fx = fxCv.getContext('2d'), ex = eqCv.getContext('2d');
+  const under = document.createElement('canvas');           // lớp nền tĩnh: lưới kinh/vĩ độ + bóng đổ của bản đồ
+  const ux = under.getContext('2d');
   let D = null;                     // dữ liệu
-  let W = 0, H = 0, paths = [], border = null, cen = [], xr = [], order = [];
+  let W = 0, H = 0, dpr = 1, mob = false, paths = [], border = null, cen = [], xr = [], order = [];
   let mi = 0, from = null, to = null, shown = null, t0 = 0, nextAt = 0;
-  let cols = [], hot = [];
+  let cols = [], hot = [], avoid = [], colsTop = 0, sweepX = [0, 0];
 
-  // ── Chuẩn bị hình học theo kích thước màn hình ──
+  // ── Chuẩn bị hình học theo kích thước khung ──
   function layout() {
-    W = innerWidth; H = innerHeight;
-    const dpr = Math.min(2, window.devicePixelRatio || 1);
-    mapCv.width = Math.round(W); mapCv.height = Math.round(H);            // bản đồ bị làm mờ → 1× là đủ, nhẹ máy
-    fxCv.width = Math.round(W * dpr); fxCv.height = Math.round(H * dpr); fx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const eh = eqCv.clientHeight || 150;
+    W = stage.clientWidth; H = stage.clientHeight;
+    if (!W || !H) return;
+    mob = W < 700 || window.innerWidth <= 760;
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    for (const [cv, g] of [[mapCv, mx], [fxCv, fx], [under, ux]]) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); g.setTransform(dpr, 0, 0, dpr, 0, 0); }
+    const eh = eqCv.clientHeight || 124;
     eqCv.width = Math.round(W * dpr); eqCv.height = Math.round(eh * dpr); ex.setTransform(dpr, 0, 0, dpr, 0, 0);
+    colsTop = H - eh - (parseFloat(getComputedStyle(eqCv).bottom) || 0);
+    // vùng chữ nổi trên bản đồ (để nhãn điểm nóng / nhãn lưới tránh ra)
+    const sr = stage.getBoundingClientRect();
+    avoid = ['.st-head', '.st-hud', '.st-scale'].map((q) => $(q)).filter((el) => el && el.offsetParent).map((el) => {
+      const r = el.getBoundingClientRect();
+      return [r.left - sr.left - 6, r.top - sr.top - 6, r.right - sr.left + 6, r.bottom - sr.top + 6];
+    });
     if (!D) return;
     const [x0, y0, x1, y1] = D.bbox;
     const k = Math.cos(((y0 + y1) / 2) * Math.PI / 180);
-    const mob = W < 700;
-    // phóng to hơn khung một chút để bản đồ lộ ra quanh thẻ đăng nhập (phần rìa bắc/nam có thể ra ngoài màn hình)
-    const availW = W * (mob ? 1.3 : 0.98), availH = (H - (mob ? 110 : 140)) * (mob ? 0.9 : 1.28);
+    // khung đặt bản đồ: chừa chỗ cho tiêu đề phía trên và cột nhiệt độ phía dưới
+    const head = $('.st-head');
+    const headB = head && head.offsetParent ? head.offsetTop + head.offsetHeight + 14 : 84;
+    const top = mob ? 84 : Math.max(84, headB), bottom = colsTop - (mob ? 8 : 16), padX = mob ? 10 : 30;
+    const availW = W - padX * 2, availH = bottom - top;
     const s = Math.min(availW / ((x1 - x0) * k), availH / (y1 - y0));
-    const ox = (W - (x1 - x0) * k * s) / 2, oy = (H - (mob ? 110 : 140) - (y1 - y0) * s) / 2 - (mob ? 0 : 46);
+    const ox = padX + (availW - (x1 - x0) * k * s) / 2 + (mob ? 0 : W * 0.02), oy = top + (availH - (y1 - y0) * s) / 2;
     const P = (x, y) => [ox + (x - x0) * k * s, oy + (y1 - y) * s];
     border = new Path2D();
     paths = D.wards.map((rings, i) => {
@@ -65,25 +78,70 @@
     });
     const xs = cen.filter(Boolean).map((c) => c[0]);
     const xa = Math.min(...xs), xb = Math.max(...xs);
+    sweepX = [xa, xb];
     xr = cen.map((c) => (c ? (c[0] - xa) / ((xb - xa) || 1) : 0));
-    // cột chân trang: chọn đều các phường theo thứ tự tây → đông
+    // cột chân bản đồ: chọn đều các phường theo thứ tự tây → đông
     order = cen.map((c, i) => [c, i]).filter((x) => x[0]).sort((a, b) => a[0][0] - b[0][0]).map((x) => x[1]);
-    const n = clamp(Math.round(W / 36), 14, 48);
+    const n = clamp(Math.round(W / (mob ? 26 : 34)), 12, 44);
     const keep = cols;
     cols = Array.from({ length: n }, (_, j) => {
       const w = order[Math.floor((j + 0.5) / n * order.length)];
       const old = keep.find((c) => c.w === w);
       return old || { w, h: 0, v: NaN, ph: Math.random() * 6.28, f1: 0.6 + Math.random() * 0.9, f2: 1.7 + Math.random() * 1.6, lab: '', labT: 0 };
     });
+    // thước tỉ lệ: 1 km theo phương đông–tây = s / 111,32 px
+    const pxKm = s / 111.32;
+    const km = [5, 10, 20, 25, 50].find((q) => q * pxKm >= 64) || 50;
+    const bar = $('#stScale .bar');
+    if (bar) { bar.style.width = Math.round(km * pxKm) + 'px'; $('#stScaleT').textContent = `${km} km`; }
+    drawUnder(P, x0, y0, x1, y1);
     drawMap(performance.now(), true);
+  }
+  const hitAvoid = (x0, y0, x1, y1) => avoid.some((r) => x0 < r[2] && x1 > r[0] && y0 < r[3] && y1 > r[1]);
+
+  /** Lưới kinh/vĩ độ (mỗi 0,25°) + bóng đổ dưới bản đồ — vẽ một lần mỗi khi đổi kích thước/giao diện */
+  function drawUnder(P, x0, y0, x1, y1) {
+    const dk = dark();
+    ux.clearRect(0, 0, W, H);
+    ux.lineWidth = 1;
+    ux.strokeStyle = dk ? 'rgba(148,163,184,.09)' : 'rgba(15,23,42,.07)';
+    ux.font = '500 10px Inter, system-ui, sans-serif';
+    ux.fillStyle = dk ? 'rgba(148,163,184,.55)' : 'rgba(71,85,105,.6)';
+    const st = 0.25;
+    for (let lon = Math.ceil((x0 - 1) / st) * st; lon <= x1 + 1; lon += st) {
+      const x = Math.round(P(lon, y0)[0]) + 0.5;
+      if (x < 0 || x > W) continue;
+      ux.beginPath(); ux.moveTo(x, 0); ux.lineTo(x, colsTop); ux.stroke();
+      if (!mob) {
+        const t = `${lon.toFixed(2).replace('.', ',')}°Đ`, tw = ux.measureText(t).width;
+        if (x + 4 + tw < W - 4 && !hitAvoid(x + 2, colsTop - 18, x + 6 + tw, colsTop - 4)) ux.fillText(t, x + 4, colsTop - 7);
+      }
+    }
+    for (let lat = Math.ceil((y0 - 1) / st) * st; lat <= y1 + 1; lat += st) {
+      const y = Math.round(P(x0, lat)[1]) + 0.5;
+      if (y < 0 || y > colsTop) continue;
+      ux.beginPath(); ux.moveTo(0, y); ux.lineTo(W, y); ux.stroke();
+      if (!mob) {
+        const t = `${lat.toFixed(2).replace('.', ',')}°B`;
+        if (y > 14 && y < colsTop - 26 && !hitAvoid(4, y - 14, 60, y - 2)) ux.fillText(t, 8, y - 4);
+      }
+    }
+    // bóng đổ mềm: bản đồ như một tấm nổi trên nền lưới
+    ux.save();
+    ux.shadowColor = dk ? 'rgba(0,0,0,.6)' : 'rgba(30,41,59,.26)';
+    ux.shadowBlur = mob ? 14 : 26;
+    ux.shadowOffsetY = mob ? 5 : 10;
+    ux.fillStyle = dk ? '#0b1322' : '#f1f5f9';
+    ux.fill(border);
+    ux.restore();
   }
 
   // ── Dữ liệu tháng ──
   const monthVals = (j) => D.v[j];
   function stats(V) {
-    let s = 0, n = 0, mx = -Infinity, mn = Infinity;
-    V.forEach((v) => { if (Number.isFinite(v)) { s += v; n++; mx = Math.max(mx, v); mn = Math.min(mn, v); } });
-    return { mean: n ? s / n : NaN, max: mx, min: mn };
+    let s = 0, n = 0, hi = -Infinity, lo = Infinity;
+    V.forEach((v) => { if (Number.isFinite(v)) { s += v; n++; hi = Math.max(hi, v); lo = Math.min(lo, v); } });
+    return { mean: n ? s / n : NaN, max: hi, min: lo };
   }
   function goMonth(j, now, instant) {
     mi = (j + D.months.length) % D.months.length;
@@ -103,13 +161,14 @@
   function updateHud(V) {
     const st = stats(V);
     const ky = D.months[mi];
-    $('#hudMonth').textContent = kyText(ky);
+    $('#hudMonth').textContent = mob ? `${ky % 100}/${Math.floor(ky / 100)}` : kyText(ky);
     $('#hudMean').textContent = fmt1(st.mean) + '°';
     $('#hudMax').textContent = fmt1(st.max) + '°';
     $('#hudMin').textContent = fmt1(st.min) + '°';
     const a = D.months[0], b = D.months.at(-1);
     const idx = (k) => Math.floor(k / 100) * 12 + (k % 100);
-    $('#hudCur').style.left = ((idx(ky) - idx(a)) / ((idx(b) - idx(a)) || 1) * 100).toFixed(2) + '%';
+    const cur = $('#hudCur');
+    if (cur) cur.style.left = ((idx(ky) - idx(a)) / ((idx(b) - idx(a)) || 1) * 100).toFixed(2) + '%';
     const m = ky % 100;
     $('#hudSeason').textContent = m >= 5 && m <= 11 ? 'Mùa mưa' : 'Mùa khô';
     $('#hudMeanSw').style.background = `rgb(${rgbAt(st.mean)})`;
@@ -122,12 +181,14 @@
     const years = [];
     for (let y = a; y <= b; y += (b - a > 6 ? 3 : 1)) years.push(`<span style="left:${((y * 12 + 1 - i0) / ((i1 - i0) || 1) * 100).toFixed(2)}%">${y}</span>`);
     $('#hudTrack').innerHTML = `<div class="tk">${ticks}<b id="hudCur"></b></div><div class="yr">${years.join('')}</div>`;
+    const fm = $('#factMonths');
+    if (fm) fm.textContent = `${D.months.length} tháng`;
   }
 
   // ── Vẽ bản đồ (chỉ khi đang đổi màu) ──
   let mapBusy = true;
   function drawMap(now, force) {
-    if (!D || !shown) return;
+    if (!D || !shown || !paths.length) return;
     let moving = false;
     for (let i = 0; i < shown.length; i++) {
       const p = clamp((now - t0 - xr[i] * SWEEP) / DUR, 0, 1);
@@ -138,13 +199,14 @@
     if (!moving && !mapBusy && !force) return;
     mapBusy = moving;
     mx.clearRect(0, 0, W, H);
+    mx.drawImage(under, 0, 0, W, H);
     for (let i = 0; i < paths.length; i++) {
       const v = shown[i];
       mx.fillStyle = Number.isFinite(v) ? `rgb(${rgbAt(v)})` : (dark() ? '#1e293b' : '#cbd5e1');
       mx.fill(paths[i]);
     }
-    mx.lineWidth = 0.7;
-    mx.strokeStyle = dark() ? 'rgba(11,18,32,.55)' : 'rgba(255,255,255,.7)';
+    mx.lineWidth = mob ? 0.5 : 0.7;
+    mx.strokeStyle = dark() ? 'rgba(11,18,32,.6)' : 'rgba(255,255,255,.75)';
     mx.stroke(border);
   }
 
@@ -153,28 +215,34 @@
     fx.clearRect(0, 0, W, H);
     if (!D || !cen.length) return;
     const el = now - t0;
-    const xs = cen.filter(Boolean).map((c) => c[0]);
-    const xa = Math.min(...xs), xb = Math.max(...xs);
+    const [xa, xb] = sweepX;
     if (el < SWEEP + DUR * 0.6) {                                   // vạch quét vệ tinh
       const x = xa + (xb - xa) * clamp(el / SWEEP, 0, 1);
       const c = dark() ? '125,211,252' : '37,99,235';
       const fade = el > SWEEP ? 1 - (el - SWEEP) / (DUR * 0.6) : 1;
       const g = fx.createLinearGradient(x - 90, 0, x + 2, 0);
-      g.addColorStop(0, `rgba(${c},0)`); g.addColorStop(0.9, `rgba(${c},${0.08 * fade})`); g.addColorStop(1, `rgba(${c},${0.38 * fade})`);
+      g.addColorStop(0, `rgba(${c},0)`); g.addColorStop(0.9, `rgba(${c},${0.08 * fade})`); g.addColorStop(1, `rgba(${c},${0.4 * fade})`);
       fx.save();
       fx.fillStyle = g;
-      fx.fillRect(x - 90, 0, 92, H);
+      fx.fillRect(x - 90, 0, 92, colsTop);
       fx.globalCompositeOperation = 'destination-in';                // mờ dần ở mép trên và dưới
-      const v = fx.createLinearGradient(0, 0, 0, H);
-      v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(0.18, 'rgba(0,0,0,1)'); v.addColorStop(0.72, 'rgba(0,0,0,1)'); v.addColorStop(0.86, 'rgba(0,0,0,0)');
+      const v = fx.createLinearGradient(0, 0, 0, colsTop);
+      v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(0.15, 'rgba(0,0,0,1)'); v.addColorStop(0.85, 'rgba(0,0,0,1)'); v.addColorStop(1, 'rgba(0,0,0,0)');
       fx.fillStyle = v;
-      fx.fillRect(x - 90, 0, 92, H);
+      fx.fillRect(x - 90, 0, 92, colsTop);
       fx.restore();
     }
-    if (W < 700) return;                                            // điện thoại: thẻ đăng nhập chiếm gần hết, bỏ nhãn điểm nóng cho gọn
+    if (mob) return;                                                // điện thoại: bản đồ nhỏ, bỏ nhãn điểm nóng cho gọn
+    const placed = [];
     hot.forEach((h) => {                                            // điểm nóng hiện ra sau khi vạch quét đi qua
       const c = cen[h.i];
-      if (c[1] > H - 185 || c[1] < 30) return;                         // không đè lên cột nhiệt độ chân trang
+      const txt = fmt1(h.v) + '°C';
+      fx.font = '600 11px Inter, system-ui, sans-serif';
+      const tw = fx.measureText(txt).width + 12, lx = c[0] + 9, ly = c[1] - 22;
+      if (ly < 8 || ly + 19 > colsTop - 4 || lx + tw > W - 4 || hitAvoid(lx, ly, lx + tw, ly + 19)) return;
+      // hai điểm nóng sát nhau: chỉ giữ nhãn của điểm nóng hơn (tránh nhãn chồng lên nhau)
+      if (placed.some((r) => lx < r[2] + 4 && lx + tw > r[0] - 4 && ly < r[3] + 4 && ly + 19 > r[1] - 4)) return;
+      placed.push([lx, ly, lx + tw, ly + 19]);
       const a = clamp((el - xr[h.i] * SWEEP - DUR * 0.5) / 400, 0, 1);
       if (a <= 0) return;
       const pulse = (now / 1400 + h.r * 0.33) % 1;
@@ -184,13 +252,10 @@
       fx.beginPath(); fx.arc(c[0], c[1], 5 + pulse * 18, 0, Math.PI * 2); fx.stroke();
       fx.fillStyle = '#dc2626';
       fx.beginPath(); fx.arc(c[0], c[1], 3.2, 0, Math.PI * 2); fx.fill();
-      const txt = fmt1(h.v) + '°C';
-      fx.font = '600 11px Inter, system-ui, sans-serif';
-      const tw = fx.measureText(txt).width + 12, lx = c[0] + 9, ly = c[1] - 22;
-      fx.fillStyle = dark() ? 'rgba(17,26,46,.92)' : 'rgba(255,255,255,.94)';
+      fx.fillStyle = dark() ? 'rgba(17,26,46,.94)' : 'rgba(255,255,255,.96)';
       fx.strokeStyle = 'rgba(220,38,38,.55)'; fx.lineWidth = 1;
       roundRect(fx, lx, ly, tw, 19, 6); fx.fill(); fx.stroke();
-      fx.fillStyle = '#dc2626';
+      fx.fillStyle = dark() ? '#fca5a5' : '#dc2626';
       fx.fillText(txt, lx + 6, ly + 13.5);
       fx.globalAlpha = 1;
     });
@@ -199,14 +264,14 @@
     g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath();
   }
 
-  // ── Cột nhiệt độ chân trang ──
+  // ── Cột nhiệt độ chân bản đồ ──
   function drawCols(now, dt) {
-    const eh = eqCv.clientHeight || 150, w = W;
+    const eh = eqCv.clientHeight || 124, w = W;
     ex.clearRect(0, 0, w, eh);
     if (!cols.length) return;
-    const right = w < 700 ? 58 : 84;                                   // lề phải dành cho nhãn trung bình
-    const n = cols.length, gap = n > 30 ? 5 : 4, bw = (w - 8 - right - gap * (n - 1)) / n;
-    const top = 26, base = eh - 4, span = base - top;
+    const right = mob ? 50 : 82;                                       // lề phải dành cho nhãn trung bình
+    const n = cols.length, gap = mob ? 3 : (n > 30 ? 5 : 4), bw = (w - 8 - right - gap * (n - 1)) / n;
+    const top = mob ? 16 : 24, base = eh, span = base - top;
     const t = now / 1000, dk = dark();
     const live = !reduce();
     let sum = 0, cnt = 0;
@@ -224,16 +289,16 @@
       const x = 4 + j * (bw + gap), y = base - c.h;
       const rgb = rgbAt(vv);
       const g = ex.createLinearGradient(0, y, 0, base);
-      g.addColorStop(0, `rgba(${rgb},.95)`); g.addColorStop(1, `rgba(${rgb},${dk ? 0.18 : 0.28})`);
+      g.addColorStop(0, `rgba(${rgb},.95)`); g.addColorStop(1, `rgba(${rgb},${dk ? 0.16 : 0.26})`);
       ex.fillStyle = g;
       roundRect(ex, x, y, bw, c.h + 6, Math.min(5, bw / 3)); ex.fill();
       ex.fillStyle = `rgba(255,255,255,${dk ? 0.35 : 0.6})`;
-      ex.fillRect(x + 2, y + 1.5, bw - 4, 1.5);
+      ex.fillRect(x + 2, y + 1.5, Math.max(0, bw - 4), 1.5);
       if (now - c.labT > 160) { c.labT = now; c.lab = bw > 30 ? fmt1(vv) + '°' : Math.round(vv) + '°'; }     // số cập nhật ~6 lần/giây
-      ex.font = `600 ${bw > 30 ? 10.5 : 10}px Inter, system-ui, sans-serif`;
+      ex.font = `600 ${bw > 30 ? 10.5 : mob ? 9 : 10}px Inter, system-ui, sans-serif`;
       ex.textAlign = 'center';
-      ex.fillStyle = dk ? 'rgba(203,213,225,.7)' : 'rgba(51,65,85,.62)';
-      ex.fillText(c.lab, x + bw / 2, y - 6);
+      ex.fillStyle = dk ? 'rgba(203,213,225,.72)' : 'rgba(51,65,85,.66)';
+      ex.fillText(c.lab, x + bw / 2, y - (mob ? 4 : 6));
     });
     // đường trung bình toàn TP
     const mean = shown ? stats(shown).mean : sum / (cnt || 1);
@@ -241,13 +306,14 @@
     ex.setLineDash([5, 4]); ex.lineWidth = 1;
     ex.strokeStyle = dk ? 'rgba(226,232,240,.45)' : 'rgba(15,23,42,.35)';
     ex.beginPath(); ex.moveTo(4, my); ex.lineTo(w - right + 2, my); ex.stroke(); ex.setLineDash([]);
-    ex.textAlign = 'right'; ex.font = '700 10.5px Inter, system-ui, sans-serif';
-    const lab = w < 700 ? `TB ${Math.round(mean)}°` : `TB ${fmt1(mean)}°C`, lw = ex.measureText(lab).width + 12;
+    ex.textAlign = 'right'; ex.font = `700 ${mob ? 10 : 10.5}px Inter, system-ui, sans-serif`;
+    const lab = mob ? `TB ${Math.round(mean)}°` : `TB ${fmt1(mean)}°C`, lw = ex.measureText(lab).width + 12;
     ex.fillStyle = dk ? 'rgba(17,26,46,.92)' : 'rgba(255,255,255,.95)';
     ex.strokeStyle = dk ? 'rgba(148,163,184,.35)' : 'rgba(15,23,42,.15)';
-    roundRect(ex, w - 6 - lw, my - 10, lw, 20, 7); ex.fill(); ex.stroke();
+    const ly = clamp(my - 10, 2, eh - 22);
+    roundRect(ex, w - 6 - lw, ly, lw, 20, 7); ex.fill(); ex.stroke();
     ex.fillStyle = dk ? '#e2e8f0' : '#0f172a';
-    ex.fillText(lab, w - 12, my + 4);
+    ex.fillText(lab, w - 12, ly + 14);
     ex.textAlign = 'left';
   }
 
@@ -279,11 +345,14 @@
     if (reduce()) { goMonth(D.months.length - 1, now, true); t0 = now - 1e5; still(); }
   }).catch(() => { document.body.classList.add('bg-off'); });
 
-  addEventListener('resize', () => { layout(); if (!looping) still(); });
+  // đổi kích thước khung (xoay máy, bàn phím ảo không đổi chiều cao khung vì dùng svh)
+  let rsz = 0;
+  const onResize = () => { cancelAnimationFrame(rsz); rsz = requestAnimationFrame(() => { layout(); if (shown) updateHud(to); if (!looping) still(); }); };
+  if (window.ResizeObserver) new ResizeObserver(onResize).observe(stage); else addEventListener('resize', onResize);
   if (window.LSTSettings) LSTSettings.on(() => {
     PAL = palette();
     mapBusy = true;
-    if (D) drawMap(performance.now(), true);
+    layout();                                     // vẽ lại lưới/bóng đổ theo giao diện sáng/tối
     if (shown) updateHud(to);
     if (reduce()) still(); else if (!looping) { last = 0; requestAnimationFrame(frame); }
   });

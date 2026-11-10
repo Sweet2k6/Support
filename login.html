@@ -2,8 +2,8 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#eef3f9" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#e9eff7" />
   <title>Đăng nhập · LST Forecast</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230f172a'/%3E%3Crect x='7' y='18' width='3.4' height='7' rx='1' fill='%2300c8ff'/%3E%3Crect x='12.2' y='14' width='3.4' height='11' rx='1' fill='%2322c55e'/%3E%3Crect x='17.4' y='10' width='3.4' height='15' rx='1' fill='%23facc15'/%3E%3Crect x='22.6' y='6' width='3.4' height='19' rx='1' fill='%23ef4444'/%3E%3C/svg%3E" />
   <script src="js/settings.js?v=5"></script>
@@ -11,78 +11,89 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@500;600;700&display=swap&subset=vietnamese" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link rel="stylesheet" href="css/style.css?v=7" />
-  <link rel="stylesheet" href="css/auth.css?v=4" />
+  <link rel="stylesheet" href="css/style.css?v=8" />
+  <link rel="stylesheet" href="css/auth.css?v=5" />
 </head>
 <body class="auth-page" data-ctx="login">
-  <!-- Nền: bản đồ LST TP.HCM mờ tự chạy qua các tháng (js/login-bg.js) + cột nhiệt độ theo phường ở chân trang -->
-  <canvas class="bg-map" id="bgMap" aria-hidden="true"></canvas>
-  <div class="bg-veil" aria-hidden="true"></div>
-  <canvas class="bg-fx" id="bgFx" aria-hidden="true"></canvas>
-  <canvas class="eq" id="eq" aria-hidden="true"></canvas>
-  <aside class="bg-hud" aria-label="Ảnh nhiệt đang phát">
-    <div class="h-top"><span class="live"><i></i>Đang phát ảnh nhiệt vệ tinh</span><span class="season" id="hudSeason">–</span></div>
-    <div class="h-month" id="hudMonth">LST TP.HCM</div>
-    <div class="h-stats">
-      <div><span class="k"><i class="sw" id="hudMeanSw"></i>Trung bình</span><b id="hudMean">–</b></div>
-      <div><span class="k">Cao nhất</span><b id="hudMax" class="hot">–</b></div>
-      <div><span class="k">Thấp nhất</span><b id="hudMin" class="cool">–</b></div>
-    </div>
-    <div class="h-track" id="hudTrack"></div>
-    <div class="h-legend"><span>25°</span><i></i><span>45°C</span></div>
-  </aside>
+  <div class="au-shell">
+    <button class="icon-btn au-set" id="btnSet" type="button" title="Cài đặt giao diện" aria-label="Cài đặt"><i class="fa-solid fa-gear"></i></button>
+    <!-- Bên trái (điện thoại: phía trên): bản đồ LST TP.HCM tự chạy qua các tháng có ảnh vệ tinh (js/login-bg.js) -->
+    <section class="au-stage" id="stage" aria-label="Ảnh nhiệt bề mặt TP.HCM đang phát">
+      <canvas class="st-map" id="bgMap" aria-hidden="true"></canvas>
+      <canvas class="st-fx" id="bgFx" aria-hidden="true"></canvas>
+      <canvas class="st-cols" id="eq" aria-hidden="true"></canvas>
 
-  <div class="auth-tools"><button class="icon-btn" id="btnSet" type="button" title="Cài đặt giao diện" aria-label="Cài đặt"><i class="fa-solid fa-gear"></i></button></div>
+      <header class="st-head">
+        <h2>TP. Hồ Chí Minh nóng đến đâu?</h2>
+        <p>Nhiệt độ bề mặt đất của 168 phường/xã, đo từ ảnh vệ tinh Landsat mỗi tháng</p>
+      </header>
 
-  <div class="auth-wrap">
-    <main class="auth-card">
-      <div class="auth-brand">
-        <span class="rail-logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-        <div>
-          <h1>LST Forecast</h1>
-          <p>Nhiệt độ bề mặt đất TP. Hồ Chí Minh</p>
+      <aside class="st-hud" aria-live="off">
+        <div class="h-top"><span class="live"><i></i>Đang phát ảnh vệ tinh</span><span class="season" id="hudSeason">–</span></div>
+        <div class="h-month" id="hudMonth">LST TP.HCM</div>
+        <div class="h-stats">
+          <div><span class="k"><i class="sw" id="hudMeanSw"></i>Trung bình</span><b id="hudMean">–</b></div>
+          <div><span class="k">Cao nhất</span><b id="hudMax" class="hot">–</b></div>
+          <div><span class="k">Thấp nhất</span><b id="hudMin" class="cool">–</b></div>
         </div>
-      </div>
+        <div class="h-track" id="hudTrack"></div>
+        <div class="h-legend"><span>25°</span><i></i><span>45°C</span></div>
+      </aside>
 
-      <h2 class="auth-title" id="formTitle">Đăng nhập để xem bản đồ</h2>
-      <div class="callout err" id="err" role="alert" hidden></div>
+      <div class="st-scale" id="stScale" aria-hidden="true"><i class="na">B</i><span class="bar"><b></b></span><span class="t" id="stScaleT">20 km</span></div>
+    </section>
 
-      <form id="form" novalidate>
-        <label class="fld"><span>Tên đăng nhập</span>
-          <div class="ctl"><i class="fa-solid fa-user lead"></i><input id="u" autocomplete="username" autocapitalize="none" spellcheck="false" required placeholder="vd. admin" /></div>
-        </label>
-        <label class="fld" id="nameRow" hidden><span>Họ tên</span>
-          <div class="ctl"><i class="fa-solid fa-id-card lead"></i><input id="name" autocomplete="name" placeholder="Không bắt buộc" /></div>
-        </label>
-        <label class="fld"><span>Mật khẩu</span>
-          <div class="ctl has-btn">
-            <i class="fa-solid fa-lock lead"></i>
-            <input id="pw" type="password" autocomplete="current-password" required placeholder="Nhập mật khẩu" />
-            <button class="eye" id="eye" type="button" aria-label="Hiện mật khẩu"><i class="fa-solid fa-eye"></i></button>
+    <!-- Bên phải (điện thoại: tấm phía dưới): đăng nhập -->
+    <section class="au-side">
+      <main class="auth-card">
+        <div class="auth-brand">
+          <span class="rail-logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+          <div>
+            <h1>LST Forecast</h1>
+            <p>Nhiệt độ bề mặt đất TP. Hồ Chí Minh</p>
           </div>
-          <small id="pwHint" hidden>Ít nhất 6 ký tự.</small>
-        </label>
-        <label class="fld" id="pw2Row" hidden><span>Nhập lại mật khẩu</span>
-          <div class="ctl"><i class="fa-solid fa-lock lead"></i><input id="pw2" type="password" autocomplete="new-password" /></div>
-        </label>
-        <div class="auth-row" id="rememberRow">
-          <label><input type="checkbox" id="remember" /> Giữ đăng nhập 30 ngày</label>
         </div>
-        <button class="btn primary block btn-go" id="submit" type="submit"><i class="fa-solid fa-right-to-bracket"></i><span>Đăng nhập</span></button>
-      </form>
 
-      <p class="auth-foot" id="switchLine">Chưa có tài khoản? <button class="auth-link" id="switch" type="button">Đăng ký người dùng</button></p>
-      <div class="callout info" id="staticNote" hidden><i class="fa-solid fa-circle-info"></i>Bản demo tĩnh: tài khoản được lưu trong trình duyệt này, không dùng chung giữa các máy.</div>
-    </main>
-    <ul class="auth-facts" aria-label="Hệ thống có gì">
-      <li><i class="fa-solid fa-satellite"></i>Ảnh vệ tinh 2017–2026</li>
-      <li><i class="fa-solid fa-map-location-dot"></i>168 phường/xã</li>
-      <li><i class="fa-solid fa-brain"></i>Dự báo AI 12 tháng và 7 ngày</li>
-    </ul>
+        <h2 class="auth-title" id="formTitle">Đăng nhập để xem bản đồ</h2>
+        <div class="callout err" id="err" role="alert" hidden></div>
+
+        <form id="form" novalidate>
+          <label class="fld"><span>Tên đăng nhập</span>
+            <div class="ctl"><i class="fa-solid fa-user lead"></i><input id="u" autocomplete="username" autocapitalize="none" spellcheck="false" required placeholder="vd. admin" /></div>
+          </label>
+          <label class="fld" id="nameRow" hidden><span>Họ tên</span>
+            <div class="ctl"><i class="fa-solid fa-id-card lead"></i><input id="name" autocomplete="name" placeholder="Không bắt buộc" /></div>
+          </label>
+          <label class="fld"><span>Mật khẩu</span>
+            <div class="ctl has-btn">
+              <i class="fa-solid fa-lock lead"></i>
+              <input id="pw" type="password" autocomplete="current-password" required placeholder="Nhập mật khẩu" />
+              <button class="eye" id="eye" type="button" aria-label="Hiện mật khẩu"><i class="fa-solid fa-eye"></i></button>
+            </div>
+            <small id="pwHint" hidden>Ít nhất 6 ký tự.</small>
+          </label>
+          <label class="fld" id="pw2Row" hidden><span>Nhập lại mật khẩu</span>
+            <div class="ctl"><i class="fa-solid fa-lock lead"></i><input id="pw2" type="password" autocomplete="new-password" /></div>
+          </label>
+          <div class="auth-row" id="rememberRow">
+            <label><input type="checkbox" id="remember" /> Giữ đăng nhập 30 ngày</label>
+          </div>
+          <button class="btn primary block btn-go" id="submit" type="submit"><i class="fa-solid fa-right-to-bracket"></i><span>Đăng nhập</span></button>
+        </form>
+
+        <p class="auth-foot" id="switchLine">Chưa có tài khoản? <button class="auth-link" id="switch" type="button">Đăng ký người dùng</button></p>
+        <div class="callout info" id="staticNote" hidden><i class="fa-solid fa-circle-info"></i>Bản demo tĩnh: tài khoản được lưu trong trình duyệt này, không dùng chung giữa các máy.</div>
+      </main>
+      <ul class="auth-facts" aria-label="Hệ thống có gì">
+        <li><i class="fa-solid fa-satellite"></i><span><b id="factMonths">58 tháng</b> ảnh vệ tinh 2017–2026</span></li>
+        <li><i class="fa-solid fa-map-location-dot"></i><span><b>168</b> phường/xã · lưới 480 m</span></li>
+        <li><i class="fa-solid fa-brain"></i><span>Dự báo AI <b>12 tháng</b> và <b>7 ngày</b></span></li>
+      </ul>
+    </section>
   </div>
 
   <script src="js/auth.js?v=2"></script>
-  <script src="js/login-bg.js?v=1"></script>
+  <script src="js/login-bg.js?v=2"></script>
   <script>
     const $ = (s) => document.querySelector(s);
     let mode = 'login';

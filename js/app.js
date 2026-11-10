@@ -1229,35 +1229,38 @@
     ndvi_lech_tb: 'NDVI lệch trung bình', ndvi_khi_hau_cung_thang: 'NDVI khí hậu cùng tháng', tvdi_lech_tb: 'TVDI lệch trung bình',
     so_nam_khi_hau: 'Số năm khí hậu', sin_thang: 'Mùa (sin tháng)', cos_thang: 'Mùa (cos tháng)', tam_du_bao: 'Tầm dự báo (tháng)',
   };
-  function renderModelTab() {
-    const box = $('#tab-model');
+  /** Độ chính xác các mô hình (trong tab Dự báo). Bảng so sánh: hàng được tô = mô hình đang xem trên bản đồ;
+   *  nhãn "tốt nhất" = mô hình được chọn theo tập kiểm định 2025. Bấm một hàng để xem mô hình đó trên bản đồ. */
+  function renderAccView(box) {
     const runs = S.meta.runs.filter((r) => r.ma_loai === 'MO_HINH');
-    const sims = S.meta.runs.filter((r) => r.ma_loai === 'GIA_LAP');
     if (!runs.length) { box.innerHTML = '<div class="empty"><h3>Chưa có kết quả mô hình</h3><p>Chạy <code>python database/etl/du_bao_lst.py</code> để huấn luyện và ghi kết quả.</p></div>'; return; }
     const best = bestRun();
-    const cur = run()?.ma_loai === 'MO_HINH' ? run() : best;
+    const viewing = S.mode === 'run' && run()?.ma_loai === 'MO_HINH' ? run() : null;
+    const cur = viewing || best;
     const testMonths = cur.months.filter((m) => m.tap === 'test').map((m) => kyShort(m.ky));
     const futMonths = cur.months.filter((m) => m.tap === 'future').map((m) => kyShort(m.ky));
     const imp = cur.tham_so?.muc_do_quan_trong;
     const base = runs.find((r) => r.ma_mo_hinh === 'KHI_HAU');
-    const gain = base && best ? (1 - best.metrics.test?.rmse / base.metrics.test?.rmse) * 100 : null;
+    const gainOf = (r) => (base && r && r !== base && isNum(r.metrics.test?.rmse) && isNum(base.metrics.test?.rmse) ? (1 - r.metrics.test.rmse / base.metrics.test.rmse) * 100 : null);
+    const gain = gainOf(cur);
     const ens = runs.find((r) => r.ma_mo_hinh === 'ENSEMBLE');
     const fr = S.fillRun, kc = fr?.tham_so?.kiem_chung_giau_tung_thang;
     box.innerHTML = `
       <div class="callout info"><b>Bài toán:</b> dùng ảnh GEE <b>thật</b> đến hết tháng trước để dự báo LST <b>từng ô 480 m</b> cho <b>12 tháng tới</b>.
         Huấn luyện 2018–2024 · kiểm định 2025 (chọn mô hình) · kiểm tra: dữ liệu đến 12/2025 → dự báo ${testMonths[0] || '1/2026'}–${testMonths.at(-1) || ''} · tương lai: ${futMonths[0] || ''}–${futMonths.at(-1) || ''}.</div>
-      ${best ? `<div class="w-kpis" style="margin-top:12px">
-        <div class="w-kpi"><div class="k">Mô hình chọn</div><div class="v" style="font-size:15px">${esc(best.ten_mo_hinh)}</div><div class="s">thấp nhất RMSE kiểm định</div></div>
-        <div class="w-kpi"><div class="k">RMSE kiểm tra</div><div class="v">${fmt(best.metrics.test?.rmse, 2)}<small> °C</small></div><div class="s">khí hậu: ${fmt(base?.metrics.test?.rmse, 2)} °C</div></div>
-        <div class="w-kpi"><div class="k">Tốt hơn đường cơ sở</div><div class="v ${gain > 0 ? 'down' : 'up'}">${gain === null ? '–' : signed(gain, 0) + '%'}</div><div class="s">giảm sai số RMSE</div></div>
-      </div>` : ''}
-      <div class="sec-h">So sánh các mô hình <span>nhấp để xem trên bản đồ</span></div>
+      <div class="acc-now">
+        <div class="an-l"><span class="k">${viewing ? 'Đang xem trên bản đồ' : 'Mô hình tốt nhất'}</span><b title="${esc(cur.ten_mo_hinh)}">${esc(cur.ten_mo_hinh)}</b>
+          <small>${cur === best ? '<i class="fa-solid fa-trophy"></i> thấp nhất RMSE kiểm định 2025' : `tốt nhất: ${esc(best?.ten_mo_hinh || '–')}`}</small></div>
+        <div class="an-m"><span class="k">RMSE kiểm tra</span><b>${fmt(cur.metrics.test?.rmse, 2)}<small> °C</small></b><small>khí hậu ${fmt(base?.metrics.test?.rmse, 2)} °C</small></div>
+        <div class="an-m"><span class="k">So với khí hậu</span><b class="${gain > 0 ? 'good' : gain < 0 ? 'bad' : ''}">${gain === null ? '–' : signed(gain, 0) + '%'}</b><small>${gain === null ? 'mốc so sánh' : gain > 0 ? 'giảm sai số' : 'tăng sai số'}</small></div>
+      </div>
+      <div class="sec-h">So sánh các mô hình <span>bấm một hàng để xem trên bản đồ</span></div>
       <div style="overflow-x:auto"><table class="tbl" id="mTbl">
         <thead><tr><th>Mô hình</th><th title="RMSE tập kiểm định 2025 (dùng để chọn mô hình)">RMSE val</th><th>MAE</th><th>RMSE</th><th>R²</th><th title="R² sau khi bỏ trung bình toàn TP của từng tháng">R² KG</th></tr></thead>
         <tbody>${runs.map((r) => {
           const t = r.metrics.test || {}, v = r.metrics.val || {};
-          return `<tr class="pick${r.ma_phien === cur.ma_phien ? ' on' : ''}" data-id="${r.ma_phien}">
-            <td><b>${esc(r.ten_mo_hinh)}</b>${r === best ? ' <span class="chip best">chọn</span>' : ''}<span class="grp">${esc(r.nhom)}</span></td>
+          return `<tr class="pick${viewing && r.ma_phien === viewing.ma_phien ? ' on' : ''}" data-id="${r.ma_phien}" tabindex="0" title="Xem ${esc(r.ten_mo_hinh)} trên bản đồ">
+            <td><b>${esc(r.ten_mo_hinh)}</b>${r === best ? ' <span class="chip best">tốt nhất</span>' : ''}<span class="grp">${esc(r.nhom)}${viewing === r ? ' · <em class="viewing">đang xem</em>' : ''}</span></td>
             <td class="${r === best ? 'good' : ''}">${fmt(v.rmse, 2)}</td><td>${fmt(t.mae, 2)}</td><td>${fmt(t.rmse, 2)}</td><td>${fmt(t.r2, 3)}</td><td>${fmt(r.tham_so?.r2_khong_gian_test, 3)}</td></tr>`;
         }).join('')}</tbody>
       </table></div>
@@ -1278,13 +1281,11 @@
         <tr><td>Chỉ khí hậu cùng tháng</td><td>${fmt(kc.chi_khi_hau?.rmse, 2)}</td><td>${fmt(kc.chi_khi_hau?.mae, 2)}</td></tr></tbody></table></div>` : ''}
       <div class="sec-h">Tải kết quả GeoTIFF <span>${esc(cur.ten_mo_hinh)} · lưới 480 m · EPSG:32648</span></div>
       ${S.me && S.me.role !== 'admin' ? '<p class="note"><i class="fa-solid fa-lock"></i> Tải GeoTIFF dành cho quản trị viên.</p>' : `<div class="dl">${cur.months.map((m) => `<a class="btn" href="${esc(m.tif)}" download title="${TAP_TEXT[m.tap] || ''}"><i class="fa-solid fa-file-arrow-down"></i>${esc(m.tif.split('/').pop())}</a>`).join('')}</div>`}
-      ${sims.map((s) => `<div class="callout sim" style="margin-top:14px"><b><i class="fa-solid fa-flask"></i> ${esc(s.ten)}</b><br>
-        ${esc(s.tham_so?.kich_ban || '')} · ${(s.tham_so?.so_o_tac_dong || 0).toLocaleString('vi-VN')} ô chịu tác động ·
-        thay đổi LST trung bình toàn TP <b>${signed(s.tham_so?.chenh_lech_tb_c, 2)} °C</b>. ${esc(s.mo_ta || '')}
-        <div style="margin-top:8px"><button class="btn" data-sim="${s.ma_phien}"><i class="fa-solid fa-map"></i>Xem trên bản đồ</button></div></div>`).join('')}`;
-    box.classList.remove('anim'); void box.offsetWidth; box.classList.add('anim');
-    $$('#mTbl tr.pick').forEach((tr) => tr.addEventListener('click', () => chooseRun(+tr.dataset.id)));
-    $$('[data-sim]', box).forEach((b) => b.addEventListener('click', () => chooseRun(+b.dataset.sim)));
+`;
+    $$('#mTbl tr.pick').forEach((tr) => {
+      tr.addEventListener('click', () => chooseRun(+tr.dataset.id));
+      tr.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); chooseRun(+tr.dataset.id); } });
+    });
     chart('cRmse', {
       type: 'bar',
       data: {
@@ -1312,8 +1313,9 @@
         options: { interaction: { mode: 'index', intersect: false }, scales: { x: { title: { display: true, text: 'tháng tới' }, grid: { display: false } }, y: { beginAtZero: false } }, plugins: { tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${fmt(c.raw, 2)} °C` } } } },
       });
     }
+    const tok = fcToken;
     api(`/compare?phien=${cur.ma_phien}`).then((cmp) => {
-      if (!$('#cScatter')) return;
+      if (tok !== fcToken || !$('#cScatter')) return;
       const months = [...new Set(cmp.diem.map((x) => x[0]))];
       const cols = ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#7c3aed', '#0891b2', '#be185d', '#65a30d'];
       const all = cmp.diem.flatMap((x) => [x[1], x[2]]);
@@ -1435,7 +1437,7 @@
   const rmseOf = (r) => r?.metrics?.test?.rmse;
   function fcModesHTML() {
     const M = fcModes();
-    const cur = S.fcView === 'day' ? null : (run() || M.best)?.ma_phien;
+    const cur = S.mode === 'run' ? run()?.ma_phien : null;        // chỉ tô chế độ đang hiện trên bản đồ
     const card = (o) => `<button type="button" class="fc-mode${o.on ? ' on' : ''}" ${o.attr} style="--c:${o.c}" aria-pressed="${!!o.on}">
         <i class="fa-solid ${o.ic}"></i><span class="t"><b>${o.name}${o.tag ? ` <em>${o.tag}</em>` : ''}</b><small>${o.sub}</small></span>
         ${o.m ? `<span class="m">${o.m}</span>` : ''}</button>`;
@@ -1445,7 +1447,7 @@
     if (M.ens) out.push(card({ on: cur === M.ens.ma_phien, attr: `data-run="${M.ens.ma_phien}"`, ic: 'fa-layer-group', c: '#0891b2', name: 'Tổ hợp AI', sub: M.memb ? esc(M.memb.join(' + ')) : 'Kết hợp các mô hình tốt nhất', m: rm(M.ens) }));
     if (M.clim) out.push(card({ on: cur === M.clim.ma_phien, attr: `data-run="${M.clim.ma_phien}"`, ic: 'fa-chart-line', c: '#64748b', name: 'Khí hậu nhiều năm', sub: 'Mốc so sánh: TB cùng tháng các năm', m: rm(M.clim) }));
     if (M.sim) out.push(card({ on: cur === M.sim.ma_phien, attr: `data-run="${M.sim.ma_phien}"`, ic: 'fa-seedling', c: '#16a34a', name: 'Kịch bản phủ xanh', sub: 'Giả định tăng cây xanh (what-if)', m: 'Kịch bản' }));
-    out.push(card({ on: S.fcView === 'day', attr: 'data-fv="day"', ic: 'fa-calendar-day', c: '#db2777', name: 'Theo ngày', sub: '7 ngày tới · giả lập từ thời tiết', m: 'Giả lập' }));
+    out.push(card({ on: S.mode === 'day', attr: 'data-fv="day"', ic: 'fa-calendar-day', c: '#db2777', name: 'Theo ngày', sub: '7 ngày tới · giả lập từ thời tiết', m: 'Giả lập' }));
     const otherOn = M.others.some((r) => r.ma_phien === cur);
     const other = M.others.length ? `<label class="fc-other${otherOn ? ' on' : ''}"><i class="fa-solid fa-sliders"></i><span>Mô hình AI khác</span>
         <select id="fcOther" class="sel"><option value="">Chọn mô hình…</option>${M.others.map((r) => `<option value="${r.ma_phien}"${r.ma_phien === cur ? ' selected' : ''}>${esc(r.ten_mo_hinh)}${isNum(rmseOf(r)) ? ` · sai số ±${fmt(rmseOf(r), 2)} °C` : ''}</option>`).join('')}</select></label>` : '';
@@ -1456,20 +1458,23 @@
     const box = $('#tab-weather');
     if (!S.meta) return;
     const hasRun = !!(run() || bestRun());
-    if (!hasRun) S.fcView = 'day';
+    if (!hasRun && S.fcView !== 'day') S.fcView = 'day';
+    if (S.fcView === 'acc' && S.simple) S.fcView = 'month';
+    const acc = S.fcView === 'acc';
     box.innerHTML = `
       <div class="seg fc-seg" id="fcSeg" role="tablist" aria-label="Dự báo theo">
-        <button type="button" data-fv="month" class="${S.fcView === 'month' ? 'on' : ''}"${hasRun ? '' : ' disabled'}><i class="fa-solid fa-calendar"></i>Theo tháng · 12 tháng</button>
-        <button type="button" data-fv="day" class="${S.fcView === 'day' ? 'on' : ''}"><i class="fa-solid fa-calendar-day"></i>Theo ngày · 7 ngày</button>
+        <button type="button" role="tab" data-fv="month" class="${S.fcView === 'month' ? 'on' : ''}"${hasRun ? '' : ' disabled'} title="Dự báo theo tháng cho 12 tháng tới"><i class="fa-solid fa-calendar"></i>12 tháng</button>
+        <button type="button" role="tab" data-fv="day" class="${S.fcView === 'day' ? 'on' : ''}" title="Dự báo theo ngày cho 7 ngày tới (giả lập)"><i class="fa-solid fa-calendar-day"></i>7 ngày</button>
+        <button type="button" role="tab" data-fv="acc" class="admin-only${acc ? ' on' : ''}"${hasRun ? '' : ' disabled'} title="So sánh sai số các mô hình"><i class="fa-solid fa-bullseye"></i>Độ chính xác</button>
       </div>
-      <div class="sec-h">Chế độ dự báo <span>chọn để xem trên bản đồ</span></div>
-      ${fcModesHTML()}
-      <div id="fcBody" class="fc-body"><div class="empty"><div class="ic"><i class="fa-solid fa-circle-notch fa-spin"></i></div><p>Đang tải dự báo…</p></div></div>`;
+      ${acc ? '' : `<div class="sec-h">Chế độ dự báo <span>chọn để xem trên bản đồ</span></div>${fcModesHTML()}`}
+      <div id="fcBody" class="fc-body"><div class="empty"><div class="ic"><i class="fa-solid fa-circle-notch fa-spin"></i></div><p>Đang tải…</p></div></div>`;
     box.classList.remove('anim'); void box.offsetWidth; box.classList.add('anim');
     $('#fcSeg').onclick = (e) => {
       const b = e.target.closest('button[data-fv]');
       if (!b || b.disabled || b.dataset.fv === S.fcView) return;
       S.fcView = b.dataset.fv;
+      if (S.fcView === 'acc' || (S.fcView === 'month' && S.mode === 'run')) { renderWeatherTab(); return; }   // chỉ đổi nội dung ngăn kéo, bản đồ giữ nguyên
       setMode(S.fcView === 'day' ? 'day' : 'run', S.fcView === 'day' ? { day: 0 } : {});
     };
     $$('.fc-mode', box).forEach((b) => b.addEventListener('click', () => {
@@ -1479,7 +1484,8 @@
     $('#fcOther')?.addEventListener('change', (e) => { if (e.target.value) chooseRun(+e.target.value); });
     const tok = ++fcToken;
     const body = $('#fcBody');
-    if (S.fcView === 'day') await renderDayView(body, tok);
+    if (acc) renderAccView(body);
+    else if (S.fcView === 'day') await renderDayView(body, tok);
     else await renderMonthView(body, tok);
   }
   let fcToken = 0;
@@ -1657,15 +1663,14 @@
   function setDayFrame(i) { const k = clamp(i, 0, S.frames.length - 1); setFrame(k); }
 
   // ───────────────────────── Thanh điều hướng & ngăn kéo ─────────────────────────
-  const PANE_TITLE = { overview: 'Cảnh báo & xếp hạng', ward: 'Phường/xã', model: 'Mô hình dự báo', stats: 'Thống kê', weather: 'Dự báo' };
+  const PANE_TITLE = { overview: 'Cảnh báo & xếp hạng', ward: 'Phường/xã', stats: 'Thống kê', weather: 'Dự báo' };
   function showTab(name, opts = {}) {
-    if (S.simple && name === 'model') name = 'overview';
+    if (name === 'model') { name = 'weather'; if (!S.simple) S.fcView = 'acc'; }   // tab cũ: nay là "Độ chính xác" trong Dự báo
     S.tab = name;
     $$('#rail button[data-pane]').forEach((b) => b.classList.toggle('on', b.dataset.pane === name && drawerOpen()));
     $$('#drawer .pane').forEach((p) => { p.hidden = p.id !== 'tab-' + name; });
     $('#drTitle').textContent = PANE_TITLE[name] || '';
     if (opts.norender) return;
-    if (name === 'model') renderModelTab();
     if (name === 'stats') renderStatsTab();
     if (name === 'weather') renderWeatherTab();
   }
@@ -1718,7 +1723,7 @@
     busy(false);
     if (tok !== modeToken) return;
     S.mode = mode;
-    if (mode === 'run') S.fcView = 'month';
+    if (mode === 'run' && S.fcView !== 'acc') S.fcView = 'month';
     else if (mode === 'day') S.fcView = 'day';
     $('#runPick').hidden = mode !== 'run';
     buildFrames();
@@ -1737,14 +1742,13 @@
     if (!r || r.ma_loai === 'NOI_SUY') return;
     // đang xem 12 tháng: giữ tháng đang xem (nếu mô hình mới có tháng đó); chế độ khác: nhảy tới tháng tương lai đầu tiên
     const keep = S.mode === 'run' && r.months.some((m) => m.ky === S.ky) ? S.ky : null;
-    S.fcView = 'month';
+    if (S.fcView !== 'acc') S.fcView = 'month';
     S.runId = id;
     $('#runSel').value = String(id);
     if (r.ma_loai === 'GIA_LAP') S.cmp = 'pred';
     busy(true, 'Đang tải kết quả ' + r.ten_mo_hinh + '…');
     try { await ensureRunSeries(id); } finally { busy(false); }
     await setMode('run', keep ? { ky: keep } : {});
-    if (S.tab === 'model') renderModelTab();
     if (S.tab === 'ward') renderWardTab();
     toast(`Đang xem: ${r.ten}`, 'info', 2200);
   }
@@ -1754,6 +1758,7 @@
     if (!b || b.dataset.mode === S.mode || b.disabled) return;
     const m = b.dataset.mode;
     // máy tính + ngăn kéo đang mở: chuyển ngăn kéo sang tab Dự báo để thấy ngay số liệu 12 tháng / 7 ngày
+    if (m !== 'gee') S.fcView = m === 'day' ? 'day' : 'month';
     if (m !== 'gee' && drawerOpen() && !overlayDrawer() && S.tab !== 'weather') showTab('weather', { norender: true });
     setMode(m, m === 'gee' && S.mode !== 'day' ? { ky: S.ky } : {});
   });
@@ -1915,7 +1920,7 @@
     }
     if (cur.theme !== prev.theme || cur.darkMap !== prev.darkMap) {
       styleWards();
-      if (drawerOpen() && ['ward', 'model', 'stats', 'weather'].includes(S.tab)) showTab(S.tab);
+      if (drawerOpen() && ['ward', 'stats', 'weather'].includes(S.tab)) showTab(S.tab);
       bus.emit('theme');
     }
   });

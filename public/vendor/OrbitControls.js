@@ -984,6 +984,14 @@
 
 				if ( scope.enabled === false ) return;
 				handleTouchEnd( event );
+				// [LST WebGIS] nhấc 1 trong 2 ngón: ngón còn lại tiếp tục xoay ngay (bản gốc r128 bị "đứng" tới khi chạm lại)
+				if ( event.touches.length === 1 && scope.enableRotate && scope.touches.ONE === THREE.TOUCH.ROTATE ) {
+
+					handleTouchStartRotate( event );
+					state = STATE.TOUCH_ROTATE;
+					return;
+
+				}
 				scope.dispatchEvent( _endEvent );
 				state = STATE.NONE;
 

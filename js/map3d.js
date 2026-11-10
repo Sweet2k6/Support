@@ -20,6 +20,19 @@
   const picked = [];                    // các phường đang chọn (thứ tự chọn)
   let lon0 = 106.95, lat0 = 10.92, kx = 109.3, ky = 110.6;
   let camTween = null, lastNow = 0;
+  let sceneBox = null;                  // khung x/z của toàn bộ khối (để nhìn vừa màn hình và giới hạn tâm xoay)
+  let hull = [];                        // bao lồi x/z của TP
+  function convexHull(P) {               // chuỗi đơn điệu (Andrew)
+    const p = P.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    if (p.length < 3) return p;
+    const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    const lo = [], up = [];
+    for (const q of p) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+    for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+    return lo.slice(0, -1).concat(up.slice(0, -1));
+  }
+  const coarse = window.matchMedia('(pointer: coarse)').matches;    // màn hình cảm ứng
+  const isPhone = () => window.innerWidth <= 820;
   // Vẽ theo nhu cầu: chỉ vẽ lại khi camera/khối/nhãn thay đổi; bóng đổ chỉ tính lại khi khối di chuyển
   let needsRender = true, shadowDirty = true, labelAnim = false, prevDrawn = false;
   const perf = { ema: 0, n: 0 };
@@ -108,12 +121,17 @@
 
     controls = new THREE.OrbitControls(camera, canvas);
     controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
-    controls.minDistance = 10;
-    controls.maxDistance = 380;
+    controls.dampingFactor = coarse ? 0.12 : 0.08;
+    controls.minDistance = 28;                          // không cho chui sát vào khối (nhìn xấu, dễ lạc hướng)
+    controls.maxDistance = 520;
     controls.maxPolarAngle = Math.PI / 2.15;
+    controls.screenSpacePanning = false;                // kéo bằng 2 ngón / chuột phải: trượt trên mặt đất, tâm xoay không bay lên trời
+    controls.rotateSpeed = coarse ? 0.7 : 0.9;
+    controls.zoomSpeed = coarse ? 1 : 0.9;
+    controls.panSpeed = coarse ? 0.8 : 1;
+    controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
     controls.autoRotateSpeed = 0.6;
-    controls.addEventListener('start', () => { camTween = null; });
+    controls.addEventListener('start', () => { camTween = null; userMoved = true; });
     controls.addEventListener('change', invalidate);
 
     root = new THREE.Group();
@@ -131,6 +149,7 @@
     const w = window.innerWidth, h = window.innerHeight;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
+    camera.fov = camera.aspect < 0.75 ? 56 : camera.aspect < 1.15 ? 48 : 42;
     camera.updateProjectionMatrix();
     invalidate();
   }
@@ -214,6 +233,17 @@
         });
       });
     }
+    const bb = new THREE.Box3();
+    meshes.forEach((m) => { if (m) { m.geometry.computeBoundingBox(); bb.union(m.geometry.boundingBox); } });
+    sceneBox = { minX: bb.min.x, maxX: bb.max.x, minZ: bb.min.z, maxZ: bb.max.z };
+    // bao lồi của toàn bộ ranh giới (toạ độ x/z) → tính khung nhìn vừa khít theo hình dạng thật của TP
+    const all = [];
+    S.wards.features.forEach((f) => {
+      if (!f.properties.so_o) return;
+      const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
+      polys.forEach((rings) => rings[0].forEach(([x, y]) => { const q = proj(x, y); all.push([q[0], -q[1]]); }));
+    });
+    hull = convexHull(all);
     built = true;
     applyFrame(true);
     resetView(false);
@@ -294,6 +324,7 @@
     }
     controls.autoRotate = autoRotate && !picked.length && !camTween;
     if (controls.update()) needsRender = true;
+    keepTarget();
     const ok = motion();
     const a = ok ? 1 - Math.exp(-dt / 150) : 1;
     const aLift = ok ? 1 - Math.exp(-dt / 210) : 1;
@@ -350,6 +381,14 @@
     }
     prevDrawn = draw;
     if (draw || labelAnim) labelAnim = renderLabels(false, dt);
+  }
+  /** Không cho kéo tâm xoay ra khỏi vùng TP (lạc ra khoảng trống rồi không tìm lại được các khối) */
+  const tgtFix = new THREE.Vector3();
+  function keepTarget() {
+    if (!sceneBox || camTween) return;
+    const t = controls.target, B = sceneBox, m = 6;
+    tgtFix.set(clamp(t.x, B.minX - m, B.maxX + m), clamp(t.y, 0, LIFT + 4), clamp(t.z, B.minZ - m, B.maxZ + m)).sub(t);
+    if (tgtFix.lengthSq() > 1e-8) { t.add(tgtFix); camera.position.add(tgtFix); needsRender = true; }
   }
   /** Máy yếu (dưới ~40 khung/giây kéo dài khi đang chuyển động) → hạ dần độ phân giải vẽ, tối thiểu 1× */
   function tune(dt) {
@@ -455,8 +494,11 @@
       if (!ok) L.op = opT;
       else { L.op += (opT - L.op) * Math.min(1, k * 1.6); if (Math.abs(opT - L.op) < 0.02) L.op = opT; else anim = true; }
       L.fresh = false;
-      const tf = `translate3d(${(x - L.w / 2).toFixed(1)}px,${(y - STEM - L.dy - L.h).toFixed(1)}px,0)`;
+      const lx = clamp(x - L.w / 2, 6, Math.max(6, W - L.w - 6));
+      const tf = `translate3d(${lx.toFixed(1)}px,${(y - STEM - L.dy - L.h).toFixed(1)}px,0)`;
       if (tf !== L.tf) { L.el.style.transform = tf; L.tf = tf; }
+      const sx = clamp(x - lx, 8, L.w - 8).toFixed(0) + 'px';
+      if (sx !== L.sx) { L.stem.style.left = sx; L.sx = sx; }
       const st = `scaleY(${(STEM + L.dy).toFixed(1)})`;
       if (st !== L.st) { L.stem.style.transform = st; L.st = st; }
       const os = L.op.toFixed(2);
@@ -482,9 +524,9 @@
       if (!down || down.b !== 0) { down = null; return; }
       const moved = Math.hypot(e.clientX - down.x, e.clientY - down.y);
       down = null;
-      if (moved > 6) return;                       // đang kéo xoay -> không tính là nhấp
+      if (moved > (e.pointerType === 'touch' ? 14 : 6)) return;     // đang kéo xoay -> không tính là nhấp
       const m = pick(e);
-      if (m) toggle(m, { fly: true, sync: true });      // nhấp chỗ trống không xoá lựa chọn (bỏ chọn bằng ✕, "Xoá tất cả" hoặc Esc)
+      if (m) toggle(m, { fly: true });              // nhấp chỗ trống không xoá lựa chọn (bỏ chọn bằng ✕, "Xoá tất cả" hoặc Esc)
     });
     // dò khối dưới chuột tối đa 1 lần mỗi khung hình; nội dung tooltip chỉ dựng lại khi đổi phường
     let hoverEv = null, hoverRaf = 0;
@@ -549,7 +591,6 @@
       loadCells(m);
     }
     afterPick(opts);
-    if (opts.sync && k < 0) app().selectWard(m.userData.i);
   }
   function selectOnly(m, opts = {}) {
     picked.splice(0).forEach(clearCells);
@@ -558,6 +599,7 @@
   }
   function afterPick(opts) {
     cardOpen = true;
+    setSheet(isPhone() ? 'peek' : 'full');
     invalidate();
     refreshCard();
     renderLabels(true);
@@ -570,6 +612,7 @@
     if (!picked.length) return;
     picked.splice(0).forEach(clearCells);
     $('#v3dCard').hidden = true;
+    setSheet(sheet);
     invalidate();
     renderLabels(true);
     updateCmpBtn();
@@ -581,13 +624,27 @@
     $('#v3dCmpN').textContent = picked.length;
     b.classList.toggle('on', picked.length >= 2 && cardOpen);
   }
+  /** Điện thoại: thẻ phía dưới có 2 nấc — 'peek' (ló tên + số chính) và 'full' (đọc hết, cuộn được) */
+  let sheet = 'full';
+  function setSheet(st) {
+    sheet = st;
+    const card = $('#v3dCard'), box = $('#v3d');
+    const vis = !card.hidden && picked.length > 0 && cardOpen;
+    card.classList.toggle('peek', st === 'peek');
+    box.classList.toggle('card-peek', vis && st === 'peek');
+    box.classList.toggle('card-full', vis && st !== 'peek');
+    const g = $('#v3dGrip');
+    if (g) { g.setAttribute('aria-expanded', String(st !== 'peek')); g.title = st === 'peek' ? 'Mở rộng thẻ' : 'Thu gọn thẻ'; }
+    if (st === 'peek') card.scrollTop = 0;
+  }
   /** Đưa camera tới khung nhìn vừa đủ các phường đã chọn (không zoom sát) */
   function frameSelection() {
     if (!picked.length) return;
     const pts = picked.map((m) => ({ x: m.userData.center[0] + m.userData.offT[0], z: -(m.userData.center[1] + m.userData.offT[1]), r: m.userData.radius }));
     const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length, cz = pts.reduce((s, p) => s + p.z, 0) / pts.length;
     const spread = Math.max(...pts.map((p) => Math.hypot(p.x - cx, p.z - cz) + p.r));
-    const dist = clamp(spread * 3 + 62, 75, 290);              // đủ xa để thấy tấm nổi + cột + bối cảnh xung quanh
+    const narrow = camera.aspect < 0.75 ? 1.35 : 1;
+    const dist = clamp((spread * 3 + 62) * narrow, 75, 330);   // đủ xa để thấy tấm nổi + cột + bối cảnh xung quanh
     const target = new THREE.Vector3(cx, LIFT * 0.75, cz);
     // card bên phải che một phần màn hình: dời tâm nhìn sang phải một chút
     const right = new THREE.Vector3().subVectors(camera.position, controls.target).cross(new THREE.Vector3(0, 1, 0)).normalize();
@@ -601,8 +658,59 @@
     if (!motion()) { camera.position.copy(pos); controls.target.copy(target); return; }
     camTween = { p0: camera.position.clone(), p1: pos, t0v: controls.target.clone(), t1v: target, t0: performance.now(), dur };
   }
+  function homePose(azDeg = -7.5) {
+    const B = sceneBox || { minX: -70, maxX: 70, minZ: -60, maxZ: 60 };
+    const target = new THREE.Vector3((B.minX + B.maxX) / 2, 0, (B.minZ + B.maxZ) / 2);
+    const portrait = camera.aspect < 0.9;
+    const el = (portrait ? 60 : 41) * Math.PI / 180, az = azDeg * Math.PI / 180;
+    const dir = new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el));
+    const fwd = new THREE.Vector3(-dir.x, 0, -dir.z).normalize();          // hướng nhìn chiếu xuống mặt đất
+    const pts = [];
+    const outline = hull.length ? hull : [[B.minX, B.minZ], [B.maxX, B.minZ], [B.maxX, B.maxZ], [B.minX, B.maxZ]];
+    outline.forEach(([x, z]) => { pts.push(new THREE.Vector3(x, 0, z), new THREE.Vector3(x, 9, z)); });
+    const Wv = window.innerWidth, Hv = window.innerHeight, ph = isPhone();
+    // phần màn hình bị thanh trên / mốc thời gian + chú giải phía dưới che
+    const topPx = ph ? 132 : 84, botPx = ph ? 138 : 118, sidePx = ph ? 8 : 28;
+    const yTop = 1 - (2 * topPx) / Hv, yBot = -1 + (2 * botPx) / Hv, xLim = 1 - (2 * sidePx) / Wv;
+    const p0 = camera.position.clone(), q0 = camera.quaternion.clone();
+    const place = (d) => { camera.position.copy(target).addScaledVector(dir, d); camera.lookAt(target); camera.updateMatrixWorld(); };
+    let d = 200;
+    for (let pass = 0; pass < 3; pass++) {
+      let lo = 40, hi = 1200;
+      for (let it = 0; it < 24; it++) {
+        const mid = (lo + hi) / 2;
+        place(mid);
+        const ok = pts.every((p) => { v3.copy(p).project(camera); return v3.x > -xLim && v3.x < xLim && v3.y < yTop && v3.y > yBot; });
+        if (ok) hi = mid; else lo = mid;
+      }
+      d = hi;
+      // canh giữa theo chiều dọc trong phần màn hình còn trống
+      place(d);
+      let y0 = Infinity, y1 = -Infinity;
+      pts.forEach((p) => { v3.copy(p).project(camera); y0 = Math.min(y0, v3.y); y1 = Math.max(y1, v3.y); });
+      const off = (y0 + y1) / 2 - (yTop + yBot) / 2;
+      if (Math.abs(off) < 0.01) break;
+      target.addScaledVector(fwd, off * d * Math.tan((camera.fov * Math.PI) / 360) / Math.sin(el));
+    }
+    camera.position.copy(p0); camera.quaternion.copy(q0); camera.updateMatrixWorld();
+    return { pos: target.clone().addScaledVector(dir, d), target, d };
+  }
+  /** Toàn cảnh: máy tính nhìn hướng bắc; điện thoại dọc thử vài góc xoay, chọn góc để TP (dài theo hướng
+   *  tây bắc – đông nam) nằm dọc theo màn hình → khối to hơn hẳn, chỉ đổi hướng khi lợi ≥ 15 % */
+  function bestHome() {
+    const north = homePose(-7.5);
+    let best = north;
+    if (camera.aspect < 0.9) {
+      for (const az of [25, 40, 55]) { const p = homePose(az); if (p.d < best.d) best = p; }
+      if (best.d > north.d * 0.85) best = north;
+    }
+    controls.maxDistance = Math.max(520, best.d * 1.4);
+    return best;
+  }
+  let userMoved = false;                // người dùng đã tự xoay/thu phóng → đổi kích thước màn hình không kéo camera về toàn cảnh
   function resetView(anim = true) {
-    const pos = new THREE.Vector3(-18, 118, 132), target = new THREE.Vector3(0, 0, -4);
+    userMoved = false;
+    const { pos, target } = bestHome();
     if (anim) flyTo(pos, target, 1200); else { camera.position.copy(pos); controls.target.copy(target); controls.update(); }
   }
 
@@ -717,7 +825,7 @@
   function refreshCard() {
     const card = $('#v3dCard');
     if (cardRaf) { cancelAnimationFrame(cardRaf); cardRaf = 0; }
-    if (!picked.length || !cardOpen) { card.hidden = true; return; }
+    if (!picked.length || !cardOpen) { card.hidden = true; setSheet(sheet); return; }
     const scroll = card.scrollTop;
     const A = app();
     const S = A.S;
@@ -801,7 +909,8 @@
       drawCmpChart();
     }
     card.hidden = false;
-    if (scroll) card.scrollTop = scroll;
+    setSheet(isPhone() ? sheet : 'full');
+    if (scroll && sheet !== 'peek') card.scrollTop = scroll;
   }
   function flyToWard(m) {
     const u = m.userData;
@@ -893,8 +1002,18 @@
     start();
     syncPlay(A.isPlaying());
     setTimeout(() => { if (isOpen()) document.body.classList.add('v3d-full'); }, 480);
+    try { if (!(history.state && history.state.v3d)) history.pushState({ v3d: 1 }, ''); } catch (e) { /* trình duyệt chặn history */ }
+    if (coarse) coach();
   }
-  function close() {
+  let coachT = 0;
+  function coach() {
+    const h = $('.v3d-hint');
+    if (!h) return;
+    h.classList.add('show');
+    clearTimeout(coachT);
+    coachT = setTimeout(() => h.classList.remove('show'), 5200);
+  }
+  function close(fromPop) {
     const box = $('#v3d');
     document.body.classList.remove('v3d-full');
     box.classList.remove('open');
@@ -902,7 +1021,9 @@
     $('#v3dTip').hidden = true;
     closeList();
     clearAll(false);
+    $('.v3d-hint')?.classList.remove('show');
     setTimeout(() => { if (!box.classList.contains('open')) { box.hidden = true; halt(); } }, 460);
+    try { if (fromPop !== true && history.state && history.state.v3d) history.back(); } catch (e) { /* bỏ qua */ }
   }
   const isOpen = () => document.body.classList.contains('mode-3d');
   function syncPlay(on) {
@@ -916,7 +1037,21 @@
     const A = app();
     if (!A) return setTimeout(boot, 50);
     $('#btn3d').addEventListener('click', () => open(null));          // nút trên thanh: toàn cảnh
-    $('#v3dExit').addEventListener('click', close);
+    $('#v3dExit').addEventListener('click', () => close());
+    window.addEventListener('popstate', () => { if (isOpen()) close(true); });
+    // Thẻ phía dưới (điện thoại): chạm tay nắm / tiêu đề để mở rộng–thu gọn, vuốt lên/xuống trên tay nắm
+    const grip = $('#v3dGrip');
+    if (grip) {
+      grip.addEventListener('click', () => setSheet(sheet === 'peek' ? 'full' : 'peek'));
+      let gy = null;
+      grip.addEventListener('touchstart', (e) => { gy = e.touches[0].clientY; }, { passive: true });
+      grip.addEventListener('touchend', (e) => {
+        if (gy === null) return;
+        const dy = e.changedTouches[0].clientY - gy; gy = null;
+        if (dy < -24) setSheet('full'); else if (dy > 24) setSheet('peek');
+      }, { passive: true });
+    }
+    $('#v3dCard').addEventListener('click', (e) => { if (sheet === 'peek' && isPhone() && !e.target.closest('button, a, input, select')) setSheet('full'); });
     $('#v3dReset').addEventListener('click', () => { clearAll(false); resetView(); });
     $('#v3dCardClose').addEventListener('click', () => clearAll(true));
     $('#v3dCmpBtn').addEventListener('click', () => { cardOpen = !cardOpen; refreshCard(); updateCmpBtn(); });
@@ -957,7 +1092,9 @@
       else if (e.key === 'ArrowRight') { e.preventDefault(); A.step(1); }
       else if (e.key === ' ') { e.preventDefault(); A.isPlaying() ? A.stop() : A.play(); }
     });
-    window.addEventListener('resize', () => { if (isOpen()) resize(); });
+    window.addEventListener('resize', () => { if (isOpen()) { resize(); if (built && !picked.length && !camTween && !userMoved) resetView(false); } });
+    // Safari trên iPhone: chặn cử chỉ chụm 2 ngón phóng to cả trang khi đang ở 3D
+    document.addEventListener('gesturestart', (e) => { if (isOpen()) e.preventDefault(); });
 
     A.bus.on('frame', () => { if (built) applyFrame(false); });
     A.bus.on('palette', () => { if (built) applyFrame(false); });
@@ -970,4 +1107,15 @@
     });
   }
   boot();
+  // chỉ đọc — phục vụ kiểm thử tự động (khoảng cách / góc camera, số phường đang chọn)
+  window.__v3dDebug = () => (camera && controls ? {
+    dist: +camera.position.distanceTo(controls.target).toFixed(1),
+    az: +(Math.atan2(camera.position.x - controls.target.x, camera.position.z - controls.target.z) * 180 / Math.PI).toFixed(1),
+    picked: picked.length, sheet,
+  } : null);
+  window.__v3dDebug.screenOf = (i) => {            // toạ độ màn hình của tâm phường i (mặt trên khối)
+    const m = meshes[i]; if (!m) return null;
+    const u = m.userData; v3.set(u.center[0] + u.off[0], u.y + m.scale.y, -(u.center[1] + u.off[1])).project(camera);
+    return [(v3.x + 1) / 2 * window.innerWidth, (1 - v3.y) / 2 * window.innerHeight];
+  };
 })();
