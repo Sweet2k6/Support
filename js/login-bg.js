@@ -59,7 +59,7 @@
     // khung đặt bản đồ: chừa chỗ cho tiêu đề phía trên và cột nhiệt độ phía dưới
     const head = $('.st-head');
     const headB = head && head.offsetParent ? head.offsetTop + head.offsetHeight + 14 : 84;
-    const top = mob ? 84 : Math.max(84, headB), bottom = colsTop - (mob ? 8 : 16), padX = mob ? 10 : 30;
+    const top = mob ? 80 : Math.max(84, headB), bottom = colsTop - (mob ? 4 : 16), padX = mob ? 10 : 30;
     const availW = W - padX * 2, availH = bottom - top;
     const s = Math.min(availW / ((x1 - x0) * k), availH / (y1 - y0));
     const ox = padX + (availW - (x1 - x0) * k * s) / 2 + (mob ? 0 : W * 0.02), oy = top + (availH - (y1 - y0) * s) / 2;

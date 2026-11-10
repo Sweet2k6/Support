@@ -22,10 +22,10 @@ html[data-theme="dark"] body.auth-page {
 }
 html:has(body.auth-page) { height: auto; min-height: 100%; background: var(--au-bg, #e9eff7); }
 
-.au-shell { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) var(--side-w); min-height: 100vh; min-height: 100dvh; }
+.au-shell { position: relative; display: grid; grid-template-columns: var(--side-w) minmax(0, 1fr); min-height: 100vh; min-height: 100dvh; }
 
 /* ── Sân khấu bản đồ ── */
-.au-stage { position: sticky; top: 0; height: 100vh; height: 100dvh; overflow: hidden; isolation: isolate;
+.au-stage { grid-column: 2; grid-row: 1; position: sticky; top: 0; height: 100vh; height: 100dvh; overflow: hidden; isolation: isolate;
   background: radial-gradient(120% 90% at 30% 20%, var(--au-stage-1), var(--au-stage-2)); }
 .st-map, .st-fx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .st-map { opacity: 0; transition: opacity 1s ease; }
@@ -75,9 +75,10 @@ body.bg-ready .st-scale { opacity: 1; }
 .st-scale .bar b { position: absolute; left: 0; bottom: 0; width: 50%; height: 3px; background: var(--au-ink-2); }
 
 /* ── Tấm đăng nhập ── */
-.au-side { position: relative; z-index: 3; display: flex; flex-direction: column; justify-content: center; gap: 22px; padding: 56px clamp(28px, 3vw, 48px) 32px;
-  background: var(--au-card); border-left: 1px solid var(--au-line); box-shadow: -24px 0 60px -40px rgba(15, 23, 42, .35); min-height: 100vh; min-height: 100dvh; }
-.au-set { position: absolute; top: 16px; right: 16px; z-index: 5; background: var(--au-card); border-color: var(--au-line); color: var(--au-muted); }
+.au-side { grid-column: 1; grid-row: 1; position: relative; z-index: 3; display: flex; flex-direction: column; justify-content: center; justify-content: safe center; gap: 22px; padding: 48px clamp(28px, 3vw, 48px) 32px;
+  background: var(--au-card); border-right: 1px solid var(--au-line); box-shadow: 24px 0 60px -40px rgba(15, 23, 42, .35); min-height: 100vh; min-height: 100dvh; }
+/* nút cài đặt: góc phải trên của tấm đăng nhập */
+.au-set { position: absolute; top: 16px; left: calc(var(--side-w) - 54px); z-index: 5; background: var(--au-card); border-color: var(--au-line); color: var(--au-muted); }
 .au-set:hover { color: var(--au-ink); border-color: var(--au-field-line); }
 .auth-card { width: 100%; max-width: 400px; margin: 0 auto; position: relative; color: var(--au-ink); animation: cardIn .6s var(--ease) both; }
 @keyframes cardIn { from { opacity: 0; transform: translateY(12px); } }
@@ -151,16 +152,21 @@ html.no-motion .auth-brand .rail-logo i { animation: none; }
   .st-hud { width: 240px; }
 }
 /* Laptop thấp: bỏ bớt chữ phụ trên bản đồ */
+@media (min-width: 761px) and (max-height: 900px) {
+  .au-side { gap: 16px; padding-top: 36px; padding-bottom: 24px; }
+  .auth-brand { margin-bottom: 20px; }
+  .auth-facts { padding-top: 14px; gap: 7px; }
+}
 @media (min-width: 761px) and (max-height: 700px) {
   .st-hud .h-track, .st-hud .h-legend { display: none; }
-  .au-side { justify-content: flex-start; }
+  .auth-facts { display: none; }
 }
 
 /* ── Điện thoại: bản đồ phía trên, tấm đăng nhập phía dưới (cùng một cột cuộn) ── */
 @media (max-width: 760px) {
   .au-shell { display: block; min-height: 0; }
-  .au-stage { position: relative; height: clamp(330px, 52svh, 450px); }
-  .st-cols { height: 64px; bottom: 26px; }
+  .au-stage { position: relative; height: clamp(300px, 42svh, 380px); }
+  .st-cols { height: 54px; bottom: 26px; }
   .st-head { display: none; }
   .st-scale { display: none; }
   /* bảng "đang phát" thành một dải chip gọn ở mép trên */
@@ -175,7 +181,7 @@ html.no-motion .auth-brand .rail-logo i { animation: none; }
   .st-hud .h-stats .k .sw { display: none; }
   .st-hud .h-stats b { font-size: 13px; }
   .st-hud .h-track, .st-hud .h-legend { display: none; }
-  .au-set { top: 12px; right: 12px; background: var(--au-glass); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+  .au-set { top: 12px; right: 12px; left: auto; background: var(--au-glass); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
   .au-side { min-height: 0; margin-top: -24px; border-left: 0; border-radius: 24px 24px 0 0; padding: 26px 18px calc(28px + env(safe-area-inset-bottom)); gap: 20px;
     box-shadow: 0 -18px 40px -20px rgba(15, 23, 42, .35); justify-content: flex-start; }
   .auth-brand { margin-bottom: 20px; }
