@@ -47,7 +47,7 @@ CREATE TABLE dm_chi_so (
 
 -- 1.2 Loại dữ liệu: hiện trạng hay dự báo
 CREATE TABLE dm_loai_du_lieu (
-    ma_loai  varchar(12) PRIMARY KEY,                       -- GEE | MO_HINH | GIA_LAP
+    ma_loai  varchar(12) PRIMARY KEY,                       -- GEE | NOI_SUY | MO_HINH | GIA_LAP
     ten      text NOT NULL,
     nhom     varchar(12) NOT NULL CHECK (nhom IN ('HIEN_TRANG', 'DU_BAO')),
     mo_ta    text
@@ -150,14 +150,14 @@ CREATE TABLE phien_du_bao (
     mo_ta           text,
     la_mac_dinh     boolean NOT NULL DEFAULT false,           -- phiên hiển thị mặc định trên web
     thoi_gian_chay  timestamptz NOT NULL DEFAULT now(),
-    CHECK (ma_loai IN ('MO_HINH', 'GIA_LAP'))                  -- phiên dự báo không bao giờ là GEE
+    CHECK (ma_loai IN ('MO_HINH', 'GIA_LAP', 'NOI_SUY'))       -- phiên không bao giờ là GEE (quan trắc thật)
 );
 
--- tháng nào của phiên thuộc tập nào: train | val | test | future
+-- tháng nào của phiên thuộc tập nào: train | val | test | future | fill (tháng được lấp bằng nội suy)
 CREATE TABLE phien_ky (
     ma_phien  integer NOT NULL REFERENCES phien_du_bao ON DELETE CASCADE,
     ma_ky     integer NOT NULL REFERENCES ky_thoi_gian,
-    tap       varchar(8) NOT NULL CHECK (tap IN ('train', 'val', 'test', 'future')),
+    tap       varchar(8) NOT NULL CHECK (tap IN ('train', 'val', 'test', 'future', 'fill')),
     PRIMARY KEY (ma_phien, ma_ky)
 );
 
@@ -268,6 +268,27 @@ CREATE TABLE thoi_tiet_du_bao (
     UNIQUE (ngay, kinh_do, vi_do)
 );
 
+-- 9.2 DỰ BÁO LST THEO NGÀY (7 ngày, GIẢ LẬP): lấy dự báo tháng của mô hình AI cho từng phường,
+--     cộng dao động ngày theo thời tiết Open-Meteo (nhiệt độ cao nhất, bức xạ). Ảnh Landsat chỉ có theo tháng
+--     nên giá trị theo ngày là giả lập, luôn ghi rõ phiên dự báo tháng làm nền.
+CREATE TABLE du_bao_ngay (
+    id             bigserial PRIMARY KEY,
+    ngay           date NOT NULL,
+    ma_xa          varchar(10) REFERENCES don_vi_hanh_chinh,   -- NULL = toàn thành phố
+    ma_phien_thang integer REFERENCES phien_du_bao ON DELETE CASCADE,
+    lst_thang      real,                                       -- LST tháng của mô hình (nền)
+    lech_ngay      real,                                       -- dao động ngày theo thời tiết (°C)
+    lst            real NOT NULL,                              -- = lst_thang + lech_ngay
+    lst_p10        real,
+    lst_p90        real,
+    t_max          real,
+    buc_xa_wm2     real,
+    mua_mm         real,
+    nguon          text NOT NULL DEFAULT 'GIA_LAP: AI tháng + Open-Meteo',
+    thoi_diem_tao  timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (ngay, ma_xa, ma_phien_thang)
+);
+
 -- ---------------------------------------------------------------------
 -- 10. NHẬT KÝ NẠP / XỬ LÝ DỮ LIỆU
 -- ---------------------------------------------------------------------
@@ -291,6 +312,7 @@ CREATE INDEX ix_dbo_o         ON du_bao_o (ma_o);
 CREATE INDEX ix_tkp_xa        ON thong_ke_phuong (ma_xa, ma_chi_so);
 CREATE INDEX ix_anh_pham_vi   ON anh_raster USING gist (pham_vi);
 CREATE INDEX ix_phien_chiso   ON phien_du_bao (ma_chi_so, ma_loai);
+CREATE INDEX ix_dbn_xa_ngay   ON du_bao_ngay (ma_xa, ngay);
 
 -- ---------------------------------------------------------------------
 -- 12. DỮ LIỆU DANH MỤC
@@ -311,6 +333,7 @@ INSERT INTO dm_chi_so VALUES
 
 INSERT INTO dm_loai_du_lieu VALUES
  ('GEE',     'Hiện trạng (Google Earth Engine)', 'HIEN_TRANG', 'Giá trị quan trắc do GEE tính từ ảnh vệ tinh'),
+ ('NOI_SUY', 'Nội suy tháng thiếu ảnh',          'HIEN_TRANG', 'Ước tính cho tháng không có ảnh GEE sạch mây: khí hậu cùng tháng của từng điểm + dị thường nội suy theo thời gian (kriging AR(1))'),
  ('MO_HINH', 'Dự báo của mô hình',               'DU_BAO',     'Kết quả dự báo từ mô hình học máy đã huấn luyện'),
  ('GIA_LAP', 'Kịch bản giả lập',                 'DU_BAO',     'Kết quả giả lập theo kịch bản giả định (what-if)');
 
@@ -319,11 +342,15 @@ INSERT INTO dm_mo_hinh VALUES
  ('LR',          'Linear Regression',       'Hồi quy tuyến tính',   'scikit-learn', 'Hồi quy tuyến tính bình phương nhỏ nhất', 1),
  ('BAYES_RIDGE', 'Bayesian Ridge',          'Hồi quy tuyến tính',   'scikit-learn', 'Hồi quy tuyến tính Bayes có điều chuẩn', 2),
  ('RF',          'Random Forest',           'Tập hợp cây',          'scikit-learn', 'Rừng ngẫu nhiên', 3),
- ('XGB',         'XGBoost',                 'Tập hợp cây',          'xgboost',      'Gradient boosting trên cây quyết định', 4),
- ('MLP',         'Mạng nơ-ron MLP',         'Mạng nơ-ron',          'scikit-learn', 'Mạng nơ-ron truyền thẳng nhiều lớp', 5),
- ('LSTM',        'LSTM',                    'Học sâu chuỗi',        'PyTorch',      'Mạng hồi tiếp bộ nhớ dài–ngắn (chưa chạy: cần PyTorch)', 6),
- ('GRU',         'GRU',                     'Học sâu chuỗi',        'PyTorch',      'Gated Recurrent Unit (chưa chạy: cần PyTorch)', 7),
- ('TRANSFORMER', 'Transformer',             'Học sâu chuỗi',        'PyTorch',      'Mô hình chú ý (chưa chạy: cần PyTorch)', 8);
+ ('ET',          'Extra Trees',             'Tập hợp cây',          'scikit-learn', 'Rừng cây cực ngẫu nhiên (giảm phương sai so với Random Forest)', 4),
+ ('HGB',         'Gradient Boosting',       'Tập hợp cây',          'scikit-learn', 'HistGradientBoosting: boosting trên cây với biến đã chia khoảng, nhanh trên dữ liệu lớn', 5),
+ ('XGB',         'XGBoost',                 'Tập hợp cây',          'xgboost',      'Gradient boosting trên cây quyết định', 6),
+ ('MLP',         'Mạng nơ-ron MLP',         'Mạng nơ-ron',          'scikit-learn', 'Mạng nơ-ron truyền thẳng nhiều lớp', 7),
+ ('ENSEMBLE',    'Tổ hợp AI',               'Tổ hợp mô hình',       'scikit-learn + xgboost', 'Trung bình có trọng số của các mô hình tốt nhất trên tập kiểm định (trọng số ∝ 1/RMSE²)', 8),
+ ('NOI_SUY_MUA', 'Nội suy theo mùa',        'Lấp dữ liệu',          'NumPy',        'Khí hậu cùng tháng của từng điểm + dị thường nội suy kriging AR(1) giữa hai lần quan trắc gần nhất', 9),
+ ('LSTM',        'LSTM',                    'Học sâu chuỗi',        'PyTorch',      'Mạng hồi tiếp bộ nhớ dài–ngắn (chưa chạy: cần PyTorch)', 10),
+ ('GRU',         'GRU',                     'Học sâu chuỗi',        'PyTorch',      'Gated Recurrent Unit (chưa chạy: cần PyTorch)', 11),
+ ('TRANSFORMER', 'Transformer',             'Học sâu chuỗi',        'PyTorch',      'Mô hình chú ý (chưa chạy: cần PyTorch)', 12);
 
 INSERT INTO dm_nguong_canh_bao VALUES
  ('LST', 1, 'Mát',       NULL, 30,  '#0066FF', 'Nhiệt độ bề mặt dễ chịu'),
@@ -358,9 +385,10 @@ SELECT q.ma_chi_so, q.ma_ky, k.nam, k.thang, q.ma_o, 'GEE'::varchar(12) AS ma_lo
        q.gia_tri, l.geom
   FROM quan_trac_o q JOIN ky_thoi_gian k USING (ma_ky) JOIN luoi_o l USING (ma_o)
 UNION ALL
-SELECT p.ma_chi_so, d.ma_ky, k.nam, k.thang, d.ma_o, p.ma_loai, 'DU_BAO', d.ma_phien, p.ma_mo_hinh,
+SELECT p.ma_chi_so, d.ma_ky, k.nam, k.thang, d.ma_o, p.ma_loai, ld.nhom, d.ma_phien, p.ma_mo_hinh,
        d.gia_tri, l.geom
-  FROM du_bao_o d JOIN phien_du_bao p USING (ma_phien) JOIN ky_thoi_gian k USING (ma_ky) JOIN luoi_o l USING (ma_o);
+  FROM du_bao_o d JOIN phien_du_bao p USING (ma_phien) JOIN dm_loai_du_lieu ld ON ld.ma_loai = p.ma_loai
+  JOIN ky_thoi_gian k USING (ma_ky) JOIN luoi_o l USING (ma_o);
 
 -- 13.2 Thống kê toàn thành phố theo tháng (hiện trạng + dự báo)
 CREATE VIEW v_thong_ke_thanh_pho_thang AS
@@ -477,4 +505,5 @@ $$;
 COMMENT ON SCHEMA vientham IS 'CSDL giám sát & dự báo LST/NDVI/TVDI TP.HCM (ranh giới mới 168 phường/xã)';
 COMMENT ON TABLE quan_trac_o IS 'Dữ liệu HIỆN TRẠNG do Google Earth Engine tính, tổng hợp theo ô lưới';
 COMMENT ON TABLE du_bao_o    IS 'Kết quả DỰ BÁO (mô hình hoặc giả lập), luôn gắn với một phiên dự báo';
-COMMENT ON TABLE phien_du_bao IS 'Mỗi lần chạy mô hình/kịch bản: cấu hình, kỳ huấn luyện, kỳ dự báo';
+COMMENT ON TABLE phien_du_bao IS 'Mỗi lần chạy mô hình/kịch bản/nội suy: cấu hình, kỳ huấn luyện, kỳ dự báo';
+COMMENT ON TABLE du_bao_ngay IS 'Dự báo LST 7 ngày (GIẢ LẬP): dự báo tháng của mô hình AI + dao động ngày theo thời tiết Open-Meteo';

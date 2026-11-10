@@ -1,7 +1,7 @@
 """
 BƯỚC 1 — NẠP DỮ LIỆU HIỆN TRẠNG (GEE) VÀO CSDL PostgreSQL/PostGIS (schema vientham)
 ====================================================================================
-    python database/etl/nap_du_lieu.py --tiff "D:/data tiff" --ref "<thư mục web nhóm>" --tu-nam 2020
+    python database/etl/nap_du_lieu.py --tiff "D:/data tiff" --ref "<thư mục web nhóm>" --tu-nam 2017
 
   1. Tạo lại schema vientham từ database/schema.sql
   2. Nạp ranh giới TP.HCM mới (saigon.geojson) và 168 phường/xã/đặc khu (TPHCM_Phuong_Xa.geojson)
@@ -9,7 +9,7 @@ BƯỚC 1 — NẠP DỮ LIỆU HIỆN TRẠNG (GEE) VÀO CSDL PostgreSQL/PostGI
   4. Với mỗi ảnh GeoTIFF LST/NDVI/TVDI từ năm --tu-nam:
        • giá trị trung bình từng ô  -> quan_trac_o
        • thống kê vùng từng phường (pixel 30 m) -> thong_ke_phuong
-       • ảnh PNG 8-bit cho web (lấy từ web nhóm, thiếu thì tự tạo) -> anh_raster
+       • ảnh PNG 8-bit cho web (tự tạo từ chính GeoTIFF; --png-web-nhom để chép ảnh của web nhóm) -> anh_raster
   5. Lưu khối dữ liệu ô × tháng ra database/etl/cache/cube.npz cho bước dự báo
 """
 import argparse
@@ -207,9 +207,9 @@ def xu_ly_anh(cur, idx, ym, path, ref, labels, ward_px, feats, cell_id, rows, co
         # --- 3. ảnh PNG web + danh mục ảnh
         rel = f'data/raster/{idx}/{idx}_{ym.replace("-", "_")}.png'
         dst = os.path.join(PUBLIC, rel.replace('/', os.sep))
-        ref_png = os.path.join(ref, 'data', 'raster', idx, os.path.basename(dst))
+        ref_png = os.path.join(ref, 'data', 'raster', idx, os.path.basename(dst)) if ref else ''
         os.makedirs(os.path.dirname(dst), exist_ok=True)
-        if os.path.exists(ref_png):
+        if ref and os.path.exists(ref_png):
             shutil.copyfile(ref_png, dst)
         else:
             tao_png(src, arr, valid, idx, dst)
@@ -233,7 +233,9 @@ def main():
     ap = argparse.ArgumentParser(description='Nạp dữ liệu hiện trạng GEE vào CSDL vientham')
     ap.add_argument('--tiff', default='D:/data tiff', help='Thư mục ảnh GeoTIFF xuất từ GEE (quét đệ quy)')
     ap.add_argument('--ref', default=DEFAULT_REF, help='Thư mục web nhóm (chứa saigon.geojson, TPHCM_Phuong_Xa.geojson, data/raster)')
-    ap.add_argument('--tu-nam', type=int, default=2020)
+    ap.add_argument('--tu-nam', type=int, default=2017)
+    ap.add_argument('--png-web-nhom', action='store_true',
+                    help='Chép ảnh PNG có sẵn của web nhóm thay vì tự tạo (mặc định tự tạo để khớp đúng ảnh GeoTIFF đã nạp)')
     args = ap.parse_args()
 
     t0 = time.time()
@@ -270,7 +272,7 @@ def main():
                 if (s.crs.to_string(), tuple(s.transform), s.width, s.height) != grid_key:
                     print(f'  ! Bỏ qua {path}: lưới ảnh khác các ảnh còn lại')
                     continue
-            cv, nwd = xu_ly_anh(cur, idx, ym, path, args.ref, labels, ward_px, feats, cell_id, rows, cols, overlay)
+            cv, nwd = xu_ly_anh(cur, idx, ym, path, args.ref if args.png_web_nhom else None, labels, ward_px, feats, cell_id, rows, cols, overlay)
             conn.commit()
             vals.append(cv)
             ms.append(ym)

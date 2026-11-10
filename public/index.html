@@ -2,45 +2,48 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
   <title>LST Forecast · Nhiệt độ bề mặt TP.HCM</title>
-  <meta name="description" content="WebGIS giám sát và dự báo nhiệt độ bề mặt đất (LST) cho 168 phường/xã TP.HCM — dữ liệu Google Earth Engine 2020–2026, mô hình học máy, PostgreSQL/PostGIS." />
+  <meta name="description" content="WebGIS giám sát và dự báo nhiệt độ bề mặt đất (LST) cho 168 phường/xã TP.HCM — dữ liệu Google Earth Engine 2017–2026, dự báo AI 12 tháng và 7 ngày, PostgreSQL/PostGIS." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230f172a'/%3E%3Crect x='7' y='18' width='3.4' height='7' rx='1' fill='%2300c8ff'/%3E%3Crect x='12.2' y='14' width='3.4' height='11' rx='1' fill='%2322c55e'/%3E%3Crect x='17.4' y='10' width='3.4' height='15' rx='1' fill='%23facc15'/%3E%3Crect x='22.6' y='6' width='3.4' height='19' rx='1' fill='%23ef4444'/%3E%3C/svg%3E" />
+  <script src="js/settings.js?v=5"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@500;600;700&display=swap&subset=vietnamese" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="css/style.css?v=4" />
+  <link rel="stylesheet" href="css/style.css?v=7" />
   <style>
     /* Phần chỉ dành cho quản trị viên: người dùng thường không thấy (body nhận class role-admin / role-user khi đăng nhập) */
     body:not(.role-admin) .admin-only { display: none !important; }
   </style>
 </head>
-<body class="booting">
+<body class="booting" data-ctx="map">
 
   <!-- ============ MÀN HÌNH KHỞI ĐỘNG ============ -->
   <div id="splash" aria-live="polite">
     <div class="sp-inner">
       <div class="sp-stripes" id="spStripes" aria-hidden="true"></div>
       <h1 class="sp-title">LST Forecast</h1>
-      <p class="sp-sub">Nhiệt độ bề mặt đất TP. Hồ Chí Minh · 168 phường/xã · 2020–2027</p>
+      <p class="sp-sub">Nhiệt độ bề mặt đất TP. Hồ Chí Minh · 168 phường/xã · 2017–2027</p>
       <div class="sp-prog"><i id="spFill"></i></div>
       <p class="sp-text" id="spText">Đang kết nối cơ sở dữ liệu…</p>
     </div>
   </div>
 
   <div class="app" id="layout">
-    <!-- ============ THANH ĐIỀU HƯỚNG DỌC ============ -->
+    <!-- ============ THANH ĐIỀU HƯỚNG (dọc trên máy tính, thanh dưới trên điện thoại) ============ -->
     <nav class="rail" id="rail" aria-label="Điều hướng">
       <a class="rail-logo" href="./" title="LST Forecast · TP.HCM"><i></i><i></i><i></i><i></i></a>
       <button data-pane="overview" class="on" title="Cảnh báo & xếp hạng phường/xã"><i class="fa-solid fa-ranking-star"></i><span>Xếp hạng</span></button>
       <button data-pane="ward" title="Chi tiết phường/xã đang chọn"><i class="fa-solid fa-location-dot"></i><span>Phường</span></button>
       <button data-pane="model" class="admin-only" title="So sánh mô hình dự báo"><i class="fa-solid fa-brain"></i><span>Mô hình</span></button>
       <button data-pane="stats" title="Thống kê toàn thành phố"><i class="fa-solid fa-chart-column"></i><span>Thống kê</span></button>
-      <button data-pane="weather" title="Thời tiết 7 ngày"><i class="fa-solid fa-cloud-sun"></i><span>7 ngày</span></button>
+      <button data-pane="weather" title="Dự báo 12 tháng · 7 ngày · các chế độ dự báo"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Dự báo</span></button>
       <span class="rail-sp"></span>
       <button class="rail-3d" id="btn3d" title="Xem mô hình 3D"><i class="fa-solid fa-cube"></i><span>3D</span></button>
+      <button id="btnSettings" type="button" title="Cài đặt: giao diện sáng/tối, thang màu"><i class="fa-solid fa-gear"></i><span>Cài đặt</span></button>
       <a class="rail-admin" id="roleChip" href="admin.html" hidden title="Trang quản trị"><i class="fa-solid fa-user-shield"></i><span>Quản trị</span></a>
       <button class="rail-user" id="btnLogout" type="button" title="Đăng xuất"><i class="fa-solid fa-right-from-bracket"></i><span>Thoát</span></button>
       <div class="status admin-only" id="dbStatus" title="Trạng thái CSDL"><span class="dot"></span><span class="txt">CSDL</span></div>
@@ -48,6 +51,7 @@
 
     <!-- ============ NGĂN KÉO NỘI DUNG ============ -->
     <aside class="drawer" id="drawer" aria-label="Nội dung">
+      <div class="dr-grip" aria-hidden="true"></div>
       <header class="dr-head">
         <div>
           <span class="dr-kicker">LST Forecast · TP.HCM</span>
@@ -103,14 +107,17 @@
       <div class="mapwrap">
         <div id="map" aria-label="Bản đồ nhiệt độ bề mặt"></div>
 
-        <!-- Tháng đang xem + chỉ số nhanh -->
-        <section class="hud now-card" aria-live="polite">
+        <!-- Thẻ "đang xem": kéo ra / thu vào ở mép trái để không che bản đồ -->
+        <button class="edge-tab" id="edgeTab" type="button" title="Thu gọn / mở thẻ thông tin" aria-controls="nowCard" aria-expanded="true"><i class="fa-solid fa-chevron-left"></i></button>
+        <button class="now-mini gone" id="nowMini" type="button" title="Mở thẻ thông tin"><span class="sw" id="miniSw"></span><b id="miniMonth">–</b><span class="v" id="miniVal">–</span></button>
+        <section class="hud now-card" id="nowCard" aria-live="polite">
           <div class="seg mode" id="modeSeg" role="tablist" aria-label="Loại dữ liệu">
-            <button data-mode="gee" class="on" role="tab"><i class="fa-solid fa-satellite"></i><span>Hiện trạng GEE</span></button>
-            <button data-mode="run" role="tab"><i class="fa-solid fa-wand-magic-sparkles"></i><span>Dự báo</span></button>
+            <button data-mode="gee" class="on" role="tab" title="Ảnh vệ tinh Google Earth Engine (và tháng nội suy)"><i class="fa-solid fa-satellite"></i><span>Hiện trạng</span></button>
+            <button data-mode="run" role="tab" title="Dự báo AI theo tháng (12 tháng)"><i class="fa-solid fa-wand-magic-sparkles"></i><span>12 tháng</span></button>
+            <button data-mode="day" role="tab" title="Dự báo theo ngày (7 ngày, giả lập)"><i class="fa-solid fa-calendar-day"></i><span>7 ngày</span></button>
           </div>
-          <label class="run-pick admin-only" id="runPick" hidden>
-            <span class="sr-only">Mô hình dự báo</span>
+          <label class="run-pick" id="runPick" hidden>
+            <span class="rp-k"><i class="fa-solid fa-sliders"></i>Chế độ dự báo</span>
             <select class="sel" id="runSel" title="Chọn mô hình hoặc kịch bản"></select>
           </label>
           <div class="cmp-seg seg sm admin-only" id="cmpSeg" hidden>
@@ -126,6 +133,7 @@
             </div>
           </div>
           <p class="now-desc" id="mapTitleP">–</p>
+          <div class="day-wx" id="dayWx" hidden></div>
           <div class="kpis">
             <div class="kpi"><span class="k" id="kpiMeanK">Trung bình toàn TP</span><b class="v" id="kpiMean">–</b><span class="s" id="kpiMeanSub">&nbsp;</span></div>
             <div class="kpi"><span class="k" id="kpiDeltaK">So với cùng kỳ</span><b class="v" id="kpiDelta">–</b><span class="s" id="kpiDeltaSub">&nbsp;</span></div>
@@ -134,16 +142,22 @@
         </section>
 
         <!-- Tìm kiếm + lớp bản đồ -->
-        <div class="hud-right">
+        <div class="hud-right" id="hudRight">
           <div class="search" role="search">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input id="searchInput" type="text" autocomplete="off" placeholder="Tìm phường/xã, địa chỉ, “10.77, 106.70”" aria-label="Tìm kiếm" />
             <div id="searchResults" class="search-results" role="listbox"></div>
           </div>
           <div class="hud layers">
-            <div class="seg sm base" id="baseSeg" aria-label="Bản đồ nền">
-              <button data-base="google" class="on"><i class="fa-solid fa-map"></i>Google Map</button>
-              <button data-base="sat"><i class="fa-solid fa-earth-asia"></i>Vệ tinh</button>
+            <div class="row2">
+              <div class="seg sm base" id="baseSeg" aria-label="Bản đồ nền">
+                <button data-base="google" class="on" title="Google Map"><i class="fa-solid fa-map"></i>Bản đồ</button>
+                <button data-base="sat" title="Ảnh vệ tinh Google"><i class="fa-solid fa-earth-asia"></i>Vệ tinh</button>
+              </div>
+              <div class="seg sm view-seg" id="viewSeg" aria-label="Kiểu hiển thị lớp nhiệt">
+                <button data-view="pixel" class="on" title="Pixel: lưới ô nhiệt 480 m"><i class="fa-solid fa-table-cells"></i>Pixel</button>
+                <button data-view="ward" title="Ảnh: tô màu mượt theo trung bình phường/xã"><i class="fa-regular fa-image"></i>Ảnh</button>
+              </div>
             </div>
             <label class="op-row" title="Độ đậm lớp nhiệt">
               <span>Độ đậm lớp nhiệt</span>
@@ -154,6 +168,7 @@
         </div>
 
         <div class="map-tools">
+          <button class="icon-btn" id="btnLayers" title="Lớp bản đồ" hidden><i class="fa-solid fa-layer-group"></i></button>
           <button class="icon-btn" id="btnHome" title="Toàn thành phố"><i class="fa-solid fa-house"></i></button>
           <button class="icon-btn" id="btnZoomIn" title="Phóng to"><i class="fa-solid fa-plus"></i></button>
           <button class="icon-btn" id="btnZoomOut" title="Thu nhỏ"><i class="fa-solid fa-minus"></i></button>
@@ -188,21 +203,21 @@
         <!-- Dock thời gian: mỗi vạch là 1 tháng, màu = LST trung bình toàn thành phố -->
         <div class="dock timeline">
           <div class="tl-ctrl">
-            <button class="icon-btn ghost" id="tlPrev" title="Tháng trước (←)"><i class="fa-solid fa-backward-step"></i></button>
+            <button class="icon-btn ghost" id="tlPrev" title="Trước (←)"><i class="fa-solid fa-backward-step"></i></button>
             <button class="play" id="tlPlay" title="Chạy theo thời gian (phím cách)"><i class="fa-solid fa-play"></i></button>
-            <button class="icon-btn ghost" id="tlNext" title="Tháng sau (→)"><i class="fa-solid fa-forward-step"></i></button>
+            <button class="icon-btn ghost" id="tlNext" title="Sau (→)"><i class="fa-solid fa-forward-step"></i></button>
           </div>
           <div class="tl-main">
-            <div class="stripes" id="stripes" role="slider" tabindex="0" aria-label="Chọn tháng"></div>
+            <div class="stripes" id="stripes" role="slider" tabindex="0" aria-label="Chọn thời gian"></div>
             <div class="tl-axis" id="tlAxis"></div>
           </div>
           <div class="tl-side">
-            <select class="sel sm" id="speedSel" title="Tốc độ">
+            <select class="sel sm" id="speedSel" title="Tốc độ chạy">
               <option value="2200">Chậm</option>
               <option value="1300" selected>Vừa</option>
               <option value="700">Nhanh</option>
             </select>
-            <div class="tl-key"><span class="k-obs"></span>Quan trắc<span class="k-fc"></span>Dự báo</div>
+            <div class="tl-key" id="tlKey"><span class="k-obs"></span>Quan trắc<span class="k-fill"></span>Nội suy<span class="k-fc"></span>Dự báo</div>
           </div>
         </div>
       </div>
@@ -215,9 +230,17 @@
     <header class="v3d-top">
       <div class="v3d-title">
         <span class="v3d-badge">3D</span>
-        <div>
+        <div style="min-width:0">
           <h2 id="v3dTitle">Nhiệt độ bề mặt theo phường/xã</h2>
           <p id="v3dSub">–</p>
+        </div>
+      </div>
+      <div class="v3d-mid">
+        <div class="v3d-search" role="search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input id="v3dSearch" type="text" autocomplete="off" placeholder="Tìm phường/xã để nâng lên & so sánh…" aria-label="Tìm phường/xã trong 3D" />
+          <span class="kbd">/</span>
+          <div class="v3d-list" id="v3dList" role="listbox"></div>
         </div>
       </div>
       <div class="v3d-actions">
@@ -225,9 +248,10 @@
           <button data-gap="0" class="on">Liền khối</button>
           <button data-gap="1">Tách 3 vùng cũ</button>
         </div>
+        <button class="icon-btn cmp-btn" id="v3dCmpBtn" title="Bảng so sánh các phường đã chọn" hidden><i class="fa-solid fa-scale-balanced"></i><span class="badge" id="v3dCmpN">0</span></button>
         <button class="icon-btn" id="v3dRotate" title="Tự xoay"><i class="fa-solid fa-rotate"></i></button>
         <button class="icon-btn" id="v3dReset" title="Đặt lại góc nhìn"><i class="fa-solid fa-expand"></i></button>
-        <button class="btn-exit" id="v3dExit" title="Thoát 3D (Esc)"><i class="fa-solid fa-xmark"></i>Thoát 3D</button>
+        <button class="btn-exit" id="v3dExit" title="Thoát 3D (Esc)"><i class="fa-solid fa-xmark"></i><span>Thoát 3D</span></button>
       </div>
     </header>
 
@@ -238,20 +262,20 @@
     </div>
 
     <div class="v3d-time">
-      <button class="icon-btn" id="v3dPrev" title="Tháng trước"><i class="fa-solid fa-backward-step"></i></button>
+      <button class="icon-btn" id="v3dPrev" title="Trước"><i class="fa-solid fa-backward-step"></i></button>
       <button class="play sm" id="v3dPlay" title="Chạy theo thời gian"><i class="fa-solid fa-play"></i></button>
-      <button class="icon-btn" id="v3dNext" title="Tháng sau"><i class="fa-solid fa-forward-step"></i></button>
+      <button class="icon-btn" id="v3dNext" title="Sau"><i class="fa-solid fa-forward-step"></i></button>
       <span id="v3dMonth">–</span>
     </div>
 
     <div class="v3d-tip" id="v3dTip" hidden></div>
 
     <aside class="v3d-card" id="v3dCard" hidden>
-      <button class="icon-btn v3d-close" id="v3dCardClose" title="Bỏ chọn"><i class="fa-solid fa-xmark"></i></button>
+      <button class="icon-btn v3d-close" id="v3dCardClose" title="Bỏ chọn tất cả"><i class="fa-solid fa-xmark"></i></button>
       <div id="v3dCardBody"></div>
     </aside>
 
-    <p class="v3d-hint">Nhấp vào một phường để xem cột nhiệt từng ô 480 m · kéo để xoay · cuộn để thu phóng · Esc để thoát<br /><small>Đặc khu Côn Đảo không có trong ảnh GEE nên không hiển thị.</small></p>
+    <p class="v3d-hint">Nhấp phường để <b>nâng lên</b> · nhấp thêm phường để <b>so sánh</b> · kéo để xoay · cuộn để thu phóng · Esc để thoát <small>· Côn Đảo không có ảnh GEE</small></p>
     <div class="v3d-loading" id="v3dLoading"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang dựng mô hình 3D…</div>
   </div>
 
@@ -261,8 +285,8 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script src="vendor/three.min.js"></script>
   <script src="vendor/OrbitControls.js"></script>
-  <script src="js/auth.js?v=1"></script>
-  <script src="js/app.js?v=4"></script>
-  <script src="js/map3d.js?v=4"></script>
+  <script src="js/auth.js?v=2"></script>
+  <script src="js/app.js?v=6"></script>
+  <script src="js/map3d.js?v=6"></script>
 </body>
 </html>

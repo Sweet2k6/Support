@@ -1,13 +1,15 @@
 {
   "name": "lst-forecast",
   "version": "1.0.0",
-  "description": "WebGIS giám sát & dự báo nhiệt độ bề mặt (LST) 168 phường/xã TP.HCM — Node.js + Express + PostgreSQL/PostGIS + Leaflet + Three.js",
+  "description": "WebGIS giám sát & dự báo nhiệt độ bề mặt (LST) 168 phường/xã TP.HCM — ảnh GEE 2017–2026, nội suy tháng thiếu ảnh, dự báo AI 12 tháng + 7 ngày — Node.js + Express + PostgreSQL/PostGIS + Leaflet + Three.js",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "node --watch server.js",
     "nap-du-lieu": "python database/etl/nap_du_lieu.py",
-    "du-bao": "python -u database/etl/du_bao_lst.py"
+    "noi-suy": "python -u database/etl/noi_suy_thang.py",
+    "du-bao": "python -u database/etl/du_bao_lst.py",
+    "xuat-tinh": "node database/xuat_ban_tinh.js && node database/tao_nen_dang_nhap.js"
   },
   "dependencies": {
     "compression": "^1.7.5",

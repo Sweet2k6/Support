@@ -196,7 +196,8 @@ module.exports = function setupAuth(app, pool) {
   });
 
   app.post('/api/auth/logout', (req, res) => { setCookie(res, '', 0); res.json({ ok: true }); });
-  app.get('/api/auth/me', (req, res) => (req.user ? res.json({ user: req.user }) : res.status(401).json({ error: 'Chưa đăng nhập' })));
+  // Trả 200 + user:null khi chưa đăng nhập (không phải lỗi) để trình duyệt không báo đỏ ở trang đăng nhập
+  app.get('/api/auth/me', (req, res) => res.json({ user: req.user || null }));
 
   // ── Quản lý tài khoản (chỉ admin) ──
   const wrap = (fn) => (req, res, next) => fn(req, res).catch(next);

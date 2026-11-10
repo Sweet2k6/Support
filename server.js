@@ -3,7 +3,9 @@
  * Node.js + Express + PostgreSQL/PostGIS (schema "vientham", xem database/schema.sql)
  *
  *   Hiện trạng (GEE)  : quan_trac_o, thong_ke_phuong (ma_loai='GEE'), anh_raster
+ *   Tháng thiếu ảnh   : phiên ma_loai='NOI_SUY' (ước tính, tách khỏi quan trắc)
  *   Dự báo / giả lập  : phien_du_bao, du_bao_o, thong_ke_phuong (ma_phien), danh_gia_mo_hinh
+ *   Dự báo theo ngày  : du_bao_ngay (giả lập = dự báo tháng của AI + thời tiết Open-Meteo)
  *   Hành chính mới    : ranh_gioi_tinh, don_vi_hanh_chinh (168 phường/xã/đặc khu)
  *
  * Mọi truy vấn đều dùng tham số ($1, $2…) — không ghép chuỗi đầu vào người dùng vào SQL.
@@ -342,6 +344,119 @@ async function fetchWeather(lon, lat) {
   return rows;
 }
 
+// ─── Dự báo LST THEO NGÀY (7 ngày, GIẢ LẬP) ──────────────────────────────
+// Landsat chỉ cho ảnh theo tháng nên dự báo ngày là GIẢ LẬP: lấy dự báo THÁNG của mô hình AI tốt nhất cho
+// từng phường rồi cộng dao động ngày theo thời tiết Open-Meteo so với chuẩn khí hậu tháng:
+//   lệch(ngày) = 1,0·(T_max ngày − T_max chuẩn tháng) + 0,010·(bức xạ ngày − TB bức xạ 7 ngày) − 0,05·min(mưa, 40 mm)
+// T_max chuẩn: trung bình nhiệt độ cao nhất ngày theo tháng ở TP.HCM (trạm Tân Sơn Nhất, xấp xỉ chuẩn 1991–2020).
+const TMAX_NORMAL = [31.6, 32.7, 33.9, 34.6, 34.0, 32.4, 31.8, 31.8, 31.3, 31.2, 31.0, 30.8];
+const DAILY_COEF = { t_max: 1.0, buc_xa: 0.010, mua: -0.05, mua_tran_mm: 40 };
+const CITY = { lat: 10.78, lon: 106.70 };
+const todayVN = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+function dailyOffsets(days) {
+  const rad = days.map((d) => d.buc_xa ?? 0);
+  const rm = rad.reduce((a, b) => a + b, 0) / Math.max(rad.length, 1);
+  return days.map((d) => {
+    const m = +d.ngay.slice(5, 7);
+    const v = DAILY_COEF.t_max * ((d.t_max ?? TMAX_NORMAL[m - 1]) - TMAX_NORMAL[m - 1])
+      + DAILY_COEF.buc_xa * ((d.buc_xa ?? rm) - rm)
+      + DAILY_COEF.mua * Math.min(d.mua_mm ?? 0, DAILY_COEF.mua_tran_mm);
+    return Math.max(-6, Math.min(6, Math.round(v * 100) / 100));
+  });
+}
+/** Thời tiết giả lập khi không gọi được Open-Meteo: chuẩn khí hậu + dao động xác định theo ngày (không ngẫu nhiên mỗi lần gọi). */
+function simulatedWeather(start) {
+  const out = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start + 'T12:00:00+07:00'); d.setDate(d.getDate() + i);
+    const ngay = d.toLocaleDateString('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const m = +ngay.slice(5, 7), seed = +ngay.replace(/-/g, '');
+    const w = Math.sin(seed * 12.9898) * 43758.5453, n = w - Math.floor(w) - 0.5;
+    out.push({ ngay, t_max: Math.round((TMAX_NORMAL[m - 1] + n * 2.4) * 10) / 10, t_min: Math.round((TMAX_NORMAL[m - 1] - 8 + n) * 10) / 10,
+      buc_xa: Math.round(190 + n * 60), mua_mm: Math.max(0, Math.round((n + 0.1) * 20 * 10) / 10) });
+  }
+  return out;
+}
+let dailyBusy = null;                                   // tránh tính trùng khi nhiều người mở cùng lúc
+async function buildDaily() {
+  const meta = await cached('meta', loadMeta);
+  const best = meta.runs.find((x) => x.mac_dinh && x.ma_loai === 'MO_HINH') || meta.runs.find((x) => x.ma_loai === 'MO_HINH');
+  if (!best) { const e = new Error('Chưa có phiên dự báo tháng. Chạy python database/etl/du_bao_lst.py'); e.status = 404; throw e; }
+  const day0 = todayVN();
+  const key = `daily:${day0}:${best.ma_phien}`;
+  const hit = cache.get(key);
+  if (hit && hit.t > Date.now()) return hit.v;
+
+  let nguon = 'Open-Meteo', wx;
+  try {
+    wx = (await fetchWeather(CITY.lon, CITY.lat)).map((x) => ({ ngay: x.ngay, t_max: x.t_max, t_min: x.t_min, buc_xa: x.buc_xa, mua_mm: x.mua_mm }));
+  } catch (e) {
+    const c = await pool.query(`SELECT ngay::text, t_max, t_min, buc_xa_wm2 AS buc_xa FROM ${S}.thoi_tiet_du_bao
+      WHERE kinh_do = $1 AND vi_do = $2 AND ngay >= $3::date ORDER BY ngay LIMIT 7`, [CITY.lon, CITY.lat, day0]);
+    if (c.rows.length >= 7) { wx = c.rows.map((x) => ({ ...x, mua_mm: 0 })); nguon = 'Open-Meteo (bộ nhớ đệm CSDL)'; }
+    else { wx = simulatedWeather(day0); nguon = 'thời tiết giả lập theo chuẩn khí hậu (không gọi được Open-Meteo)'; }
+  }
+  wx = wx.slice(0, 7);
+  const lech = dailyOffsets(wx);
+  const fut = best.months.filter((m) => m.tap === 'future');
+  const pickMonth = (ky) => {
+    if (best.months.some((m) => m.ky === ky)) return ky;
+    const all = best.months.map((m) => m.ky);
+    return all.reduce((a, b) => (Math.abs(b - ky) < Math.abs(a - ky) ? b : a), all[0]);
+  };
+  const kys = wx.map((d) => pickMonth(+d.ngay.slice(0, 4) * 100 + +d.ngay.slice(5, 7)));
+  const [w, v] = await Promise.all([
+    pool.query(`SELECT ma_xa FROM ${S}.don_vi_hanh_chinh ORDER BY ma_xa`),
+    pool.query(`SELECT ma_xa, ma_ky, tb FROM ${S}.thong_ke_phuong WHERE ma_phien = $1 AND ma_ky = ANY($2)`, [best.ma_phien, [...new Set(kys)]]),
+  ]);
+  const pos = new Map(w.rows.map((x, i) => [x.ma_xa, i]));
+  const byKy = {};
+  for (const x of v.rows) (byKy[x.ma_ky] ??= new Array(w.rows.length).fill(null))[pos.get(x.ma_xa)] = x.tb;
+  const bands = best.tham_so?.khoang_du_bao_80?.phuong || [];
+  const days = wx.map((d, i) => {
+    const mItem = best.months.find((m) => m.ky === kys[i]);
+    const h = Math.max(0, fut.findIndex((m) => m.ky === kys[i]));
+    const b = bands[h] || [-2, 2];
+    const spread = 0.6 + 0.15 * i;                         // bất định thời tiết tăng theo số ngày
+    const base = mItem?.tb ?? null;
+    return { ngay: d.ngay, ky: kys[i], t_max: d.t_max, t_min: d.t_min, buc_xa: d.buc_xa, mua_mm: d.mua_mm ?? null, lech: lech[i],
+      lst_thang: r(base, 2), lst: base === null ? null : r(base + lech[i], 2),
+      p10: base === null ? null : r(base + lech[i] + b[0] - spread, 2), p90: base === null ? null : r(base + lech[i] + b[1] + spread, 2) };
+  });
+  const wards = days.map((d, i) => (byKy[d.ky] || []).map((x) => (x === null ? null : r(x + lech[i], 2))));
+  // Lưu vào CSDL (bảng du_bao_ngay) để tra cứu lại: 1 dòng toàn TP + 1 dòng mỗi phường cho mỗi ngày
+  try {
+    const rows = [];
+    days.forEach((d, i) => {
+      rows.push([d.ngay, null, d.lst_thang, d.lech, d.lst, d.p10, d.p90, d.t_max, d.buc_xa, d.mua_mm]);
+      w.rows.forEach((x, k) => { const val = wards[i][k]; if (val !== null) rows.push([d.ngay, x.ma_xa, r(byKy[d.ky][k], 3), d.lech, val, null, null, d.t_max, d.buc_xa, d.mua_mm]); });
+    });
+    const col = (j) => rows.map((x) => x[j]);
+    await pool.query(`DELETE FROM ${S}.du_bao_ngay WHERE ma_phien_thang = $1 AND ngay = ANY($2::date[])`, [best.ma_phien, days.map((d) => d.ngay)]);
+    await pool.query(`INSERT INTO ${S}.du_bao_ngay (ngay, ma_xa, ma_phien_thang, lst_thang, lech_ngay, lst, lst_p10, lst_p90, t_max, buc_xa_wm2, mua_mm, nguon)
+      SELECT u.ngay, u.ma_xa, $1, u.lt, u.le, u.ls, u.p1, u.p9, u.tx, u.bx, u.mm, $2
+        FROM unnest($3::date[], $4::varchar[], $5::real[], $6::real[], $7::real[], $8::real[], $9::real[], $10::real[], $11::real[], $12::real[])
+          AS u(ngay, ma_xa, lt, le, ls, p1, p9, tx, bx, mm)`,
+    [best.ma_phien, `GIA_LAP: ${best.ten_mo_hinh} (tháng) + ${nguon}`, col(0), col(1), col(2), col(3), col(4), col(5), col(6), col(7), col(8), col(9)]);
+  } catch (e) { console.warn('[daily] không lưu được du_bao_ngay:', e.message); }
+  const out = {
+    nguon, cap_nhat: new Date().toISOString(), loai: 'GIA_LAP',
+    phien: { ma_phien: best.ma_phien, ten: best.ten, ten_mo_hinh: best.ten_mo_hinh },
+    vi_tri: CITY, he_so: { ...DAILY_COEF, tmax_chuan: TMAX_NORMAL }, days, wards,
+  };
+  cache.set(key, { t: Date.now() + 3 * 3600e3, v: out });
+  return out;
+}
+app.get('/api/daily', wrap(async (req, res) => {
+  try {
+    dailyBusy ||= buildDaily().finally(() => { dailyBusy = null; });
+    res.json(await dailyBusy);
+  } catch (e) {
+    if (e.status) return res.status(e.status).json({ error: e.message });
+    throw e;
+  }
+}));
+
 app.get('/api/weather', wrap(async (req, res) => {
   const lat = Math.round((num(req.query.lat, 10.776)) * 100) / 100;
   const lon = Math.round((num(req.query.lon, 106.70)) * 100) / 100;
@@ -364,7 +479,7 @@ app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'adm
 app.get('/api/admin/summary', wrap(async (req, res) => {
   const tables = ['dm_chi_so', 'dm_loai_du_lieu', 'dm_mo_hinh', 'dm_nguong_canh_bao', 'ky_thoi_gian', 'ranh_gioi_tinh',
     'don_vi_hanh_chinh', 'luoi_o', 'phien_du_bao', 'phien_ky', 'quan_trac_o', 'du_bao_o', 'anh_raster',
-    'thong_ke_phuong', 'danh_gia_mo_hinh', 'thoi_tiet_du_bao', 'nhat_ky_nap'];
+    'thong_ke_phuong', 'danh_gia_mo_hinh', 'thoi_tiet_du_bao', 'du_bao_ngay', 'nhat_ky_nap'];
   const counts = await pool.query(`SELECT c.relname AS bang, c.reltuples::bigint AS uoc_luong,
       pg_total_relation_size(c.oid) AS dung_luong, obj_description(c.oid) AS mo_ta
       FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -406,4 +521,6 @@ app.use((err, req, res, next) => {
     console.error('[db] Chưa sẵn sàng:', e.message);
   }
   app.listen(PORT, () => console.log(`[web] http://localhost:${PORT}`));
+  // tính sẵn dự báo 7 ngày (gọi Open-Meteo + ghi du_bao_ngay) để người dùng mở tab 7 ngày là có ngay
+  if (process.env.LST_EXPORT !== '1') setTimeout(() => buildDaily().then(() => console.log('[daily] đã tính sẵn dự báo 7 ngày')).catch((e) => console.warn('[daily]', e.message)), 3000);
 })();

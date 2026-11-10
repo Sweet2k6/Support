@@ -19,7 +19,6 @@
     { u: 'admin', name: 'Quản trị viên', role: 'admin', pw: 'admin123' },
     { u: 'nguoidung', name: 'Người dùng', role: 'user', pw: 'user123' },
   ];
-
   const fail = (msg) => { throw new Error(msg); };
   const normName = (u) => String(u || '').trim().toLowerCase();
   function checkNew(u, pw) {

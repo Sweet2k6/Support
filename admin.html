@@ -2,14 +2,16 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
   <title>Quản trị · LST Forecast</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%230f172a'/%3E%3Crect x='7' y='18' width='3.4' height='7' rx='1' fill='%2300c8ff'/%3E%3Crect x='12.2' y='14' width='3.4' height='11' rx='1' fill='%2322c55e'/%3E%3Crect x='17.4' y='10' width='3.4' height='15' rx='1' fill='%23facc15'/%3E%3Crect x='22.6' y='6' width='3.4' height='19' rx='1' fill='%23ef4444'/%3E%3C/svg%3E" />
+  <script src="js/settings.js?v=5"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@500;600;700&display=swap&subset=vietnamese" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <link rel="stylesheet" href="css/style.css?v=4" />
-  <link rel="stylesheet" href="css/auth.css?v=1" />
+  <link rel="stylesheet" href="css/style.css?v=7" />
+  <link rel="stylesheet" href="css/auth.css?v=4" />
   <style>
     body { overflow: auto; display: block; }
     .wrap { max-width: 1180px; margin: 0 auto; padding: 22px 18px 40px; }
@@ -24,9 +26,13 @@
     .box h2 i { color: var(--accent); }
     .box > p { margin: 0 0 12px; color: var(--muted); font-size: 12px; }
     .tbl td.l, .tbl th.l { text-align: left; }
-    .tag { font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: #f1f5f9; color: var(--text-2); }
+    .tag { font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: var(--panel-3); color: var(--text-2); }
     .tag.gee { background: #f0fdfa; color: #0f766e; }
     .tag.fc { background: #eef2ff; color: #4338ca; }
+    .tag.fill { background: #fffbeb; color: #92400e; }
+    html[data-theme="dark"] .tag.gee { background: rgba(20, 184, 166, .14); color: #5eead4; }
+    html[data-theme="dark"] .tag.fc { background: rgba(129, 140, 248, .16); color: #a5b4fc; }
+    html[data-theme="dark"] .tag.fill { background: rgba(251, 191, 36, .14); color: #fcd34d; }
     pre.log { background: #0f172a; color: #e2e8f0; padding: 10px 12px; border-radius: 10px; font-size: 11px; max-height: 260px; overflow: auto; white-space: pre-wrap; margin: 0; }
     .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
     .stat { padding: 12px 14px; }
@@ -34,9 +40,10 @@
     .stat .v { font-size: 22px; font-weight: 700; font-family: var(--font-d); font-variant-numeric: tabular-nums; }
     .sec-nav { margin-bottom: 14px; }
     @media (max-width: 860px) { .grid, .stat-row { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } .ad-head h1 { font-size: 19px; } .wrap { padding: 14px 12px 30px; } .sec-nav { display: flex; } .sec-nav button { flex: 1; } }
   </style>
 </head>
-<body>
+<body data-ctx="admin">
   <div class="wrap" id="app" hidden>
     <div class="ad-head">
       <a class="btn" href="index.html"><i class="fa-solid fa-arrow-left"></i>Về bản đồ</a>
@@ -45,6 +52,7 @@
         <p id="subtitle">Tài khoản, phân quyền và cơ sở dữ liệu</p>
       </div>
       <span class="sp"></span>
+      <button class="icon-btn" id="btnSettings" type="button" title="Cài đặt: giao diện sáng/tối, thang màu LST" aria-label="Cài đặt"><i class="fa-solid fa-gear"></i></button>
       <div class="who"><div><b id="whoName">–</b> <span class="role admin" id="whoRole">Quản trị viên</span></div>
         <button class="icon-btn ghost" id="logout" title="Đăng xuất" aria-label="Đăng xuất"><i class="fa-solid fa-right-from-bracket"></i></button></div>
     </div>
@@ -113,7 +121,7 @@
   </form></dialog>
   <div id="toasts" aria-live="polite"></div>
 
-  <script src="js/auth.js?v=1"></script>
+  <script src="js/auth.js?v=2"></script>
   <script>
     const $ = (s) => document.querySelector(s);
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -188,6 +196,7 @@
       }, 'Đã thêm tài khoản');
     });
     $('#logout').addEventListener('click', () => Auth.signOut());
+    $('#btnSettings').addEventListener('click', () => window.LSTSettings && LSTSettings.open('admin'));
 
     $('#nav').addEventListener('click', (ev) => {
       const b = ev.target.closest('button[data-sec]'); if (!b) return;
@@ -211,10 +220,10 @@
       const n = (t) => d.bang.find((x) => x.bang === t)?.so_dong ?? 0;
       $('#stats').innerHTML = [
         ['Phường/xã', n('don_vi_hanh_chinh')], ['Ô lưới 480 m', n('luoi_o')],
-        ['Giá trị hiện trạng GEE', n('quan_trac_o')], ['Giá trị dự báo', n('du_bao_o')],
+        ['Giá trị hiện trạng GEE', n('quan_trac_o')], ['Giá trị dự báo + nội suy', n('du_bao_o')],
       ].map(([k, v]) => `<div class="card stat"><div class="k">${k}</div><div class="v">${(+v).toLocaleString('vi-VN')}</div></div>`).join('');
       $('#tables').innerHTML = `<thead><tr><th class="l">Bảng</th><th>Số dòng</th><th>Dung lượng</th></tr></thead><tbody>${d.bang.map((t) => {
-        const tag = t.bang === 'quan_trac_o' ? ' <span class="tag gee">hiện trạng</span>' : ['du_bao_o', 'phien_du_bao', 'danh_gia_mo_hinh'].includes(t.bang) ? ' <span class="tag fc">dự báo</span>' : '';
+        const tag = t.bang === 'quan_trac_o' ? ' <span class="tag gee">hiện trạng</span>' : ['du_bao_o', 'phien_du_bao', 'danh_gia_mo_hinh', 'du_bao_ngay'].includes(t.bang) ? ' <span class="tag fc">dự báo</span>' : '';
         return `<tr><td class="l"><code>${t.bang}</code>${tag}</td><td>${t.so_dong.toLocaleString('vi-VN')}</td><td>${size(t.dung_luong)}</td></tr>`;
       }).join('')}<tr><td class="l"><b>Tổng schema</b></td><td></td><td><b>${esc(d.tong_dung_luong)}</b></td></tr></tbody>`;
       $('#views').innerHTML = `<tbody>${d.view.map((v) => `<tr><td class="l"><code>${v}</code></td><td class="l" style="text-align:left">${VIEW_DESC[v] || ''}</td></tr>`).join('')}</tbody>`;
@@ -222,8 +231,10 @@
       const runs = meta.runs;
       $('#metrics').innerHTML = `<thead><tr><th class="l">Phiên</th><th class="l">Loại</th><th>Train RMSE</th><th>Val RMSE</th><th>Test MAE</th><th>Test RMSE</th><th>Test R²</th><th>Test MAPE %</th><th>Bias</th><th>Số tháng</th></tr></thead><tbody>${runs.map((x) => {
         const m = x.metrics, t = m.test || {};
-        return `<tr style="${x.mac_dinh ? 'font-weight:700' : ''}"><td class="l">${esc(x.ten)}</td><td class="l"><span class="tag ${x.ma_loai === 'GIA_LAP' ? '' : 'fc'}">${esc(x.ten_loai)}</span></td>
-          <td>${fmt(m.train?.rmse)}</td><td>${fmt(m.val?.rmse)}</td><td>${fmt(t.mae)}</td><td>${fmt(t.rmse)}</td><td>${fmt(t.r2, 3)}</td><td>${fmt(t.mape, 1)}</td><td>${fmt(t.bias)}</td><td>${x.months.length}</td></tr>`;
+        const kc = x.tham_so?.kiem_chung_giau_tung_thang?.ket_hop_theo_mua;          // phiên nội suy: kiểm chứng giấu từng tháng
+        const cls = x.ma_loai === 'GIA_LAP' ? '' : x.ma_loai === 'NOI_SUY' ? 'fill' : 'fc';
+        return `<tr style="${x.mac_dinh ? 'font-weight:700' : ''}"><td class="l">${esc(x.ten)}${x.mac_dinh ? ' ★' : ''}</td><td class="l"><span class="tag ${cls}">${esc(x.ten_loai)}</span></td>
+          <td>${fmt(m.train?.rmse)}</td><td>${fmt(m.val?.rmse)}</td><td>${fmt(t.mae ?? kc?.mae)}</td><td>${fmt(t.rmse ?? kc?.rmse)}</td><td>${fmt(t.r2 ?? kc?.r2, 3)}</td><td>${fmt(t.mape, 1)}</td><td>${fmt(t.bias ?? kc?.bias)}</td><td>${x.months.length}</td></tr>`;
       }).join('')}</tbody>`;
     }
     $('#reload').addEventListener('click', async () => {
@@ -238,6 +249,7 @@
       if (!ME) return;
       $('#whoName').textContent = ME.name || ME.username;
       if (Auth.STATIC) { $('#navDb').hidden = true; $('#staticNote').hidden = false; $('#roleNote').style.display = 'none'; }
+      if (window.LSTSettings) LSTSettings.setAccount({ name: ME.name || ME.username, roleLabel: Auth.ROLES[ME.role], admin: false, onLogout: () => Auth.signOut() });
       $('#app').hidden = false;
       refreshUsers().catch((e) => toast(e.message, 'err'));
     })();

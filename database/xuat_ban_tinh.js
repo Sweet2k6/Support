@@ -34,6 +34,7 @@ const write = (rel, obj) => {
 
 (async () => {
   process.env.PORT = PORT;
+  process.env.LST_EXPORT = '1';               // cho phép chính máy này gọi API không cần đăng nhập (chỉ server tạm này)
   require('../server.js');                    // khởi động server tạm trên cổng 3999 để tái dùng logic API
   await new Promise((r) => setTimeout(r, 1500));
   fs.rmSync(OUT, { recursive: true, force: true });
@@ -55,7 +56,10 @@ const write = (rel, obj) => {
   // Ô lưới theo phường: toạ độ + LST hiện trạng mọi tháng + dự báo mọi phiên
   const cells = await pool.query(`SELECT ma_o, ma_xa, kinh_do, vi_do FROM ${S}.luoi_o WHERE ma_xa IS NOT NULL ORDER BY ma_xa, ma_o`);
   const obs = await pool.query(`SELECT ma_o, ma_ky, gia_tri FROM ${S}.quan_trac_o WHERE ma_chi_so = 'LST'`);
-  const fc = await pool.query(`SELECT d.ma_phien, d.ma_o, d.ma_ky, d.gia_tri FROM ${S}.du_bao_o d JOIN ${S}.phien_du_bao p USING (ma_phien) WHERE p.ma_chi_so = 'LST'`);
+  // Bản tĩnh chỉ gói ô lưới của: mô hình được chọn (mặc định), kịch bản giả lập và phiên nội suy — giữ dung lượng nhỏ
+  const keep = meta.runs.filter((r) => r.mac_dinh || r.ma_loai !== 'MO_HINH').map((r) => r.ma_phien);
+  const fc = await pool.query(`SELECT d.ma_phien, d.ma_o, d.ma_ky, d.gia_tri FROM ${S}.du_bao_o d JOIN ${S}.phien_du_bao p USING (ma_phien)
+                                WHERE p.ma_chi_so = 'LST' AND d.ma_phien = ANY($1)`, [keep]);
   const byWard = new Map();
   const pos = new Map();
   for (const c of cells.rows) {
